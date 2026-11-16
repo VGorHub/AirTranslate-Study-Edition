@@ -29,6 +29,11 @@ struct RealtimeAudioTransportDegradation: Equatable, Sendable {
 }
 
 final class OpenAIRealtimeTranscriber: @unchecked Sendable {
+    enum StudyTextUpdate: Sendable {
+        case snapshot(itemID: String?, final: Bool)
+        case confirmedDelta(audioMilliseconds: Int64?)
+    }
+
     private static let realtimeAudioSampleRate = 24_000
     private static let maxAudioChunkMilliseconds = 80
     private static let bytesPerPCM16Sample = 2
@@ -89,10 +94,12 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
     private var audioTransportDegradationHandler:
         (@Sendable (RealtimeAudioTransportDegradation) -> Void)?
     private var terminalTranscriptHandler: ((
+        _ itemID: String?,
         _ text: String,
         _ language: LanguageOption,
         _ confidence: Double
     ) -> Void)?
+    private var studyTranscriptHandler: (@Sendable (String, StudySegment.Channel, StudyTextUpdate) -> Void)?
     private let proxyTranscriber = LiveSpeechTranscriber()
     private let realtimeTranscriptBufferLock = NSLock()
     private var realtimeTranscriptionPublishThrottles: [String: RealtimeTranscriptPublishThrottle] = [:]
@@ -103,7 +110,7 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
     private var realtimeTimelineRetiredItemIDs = Set<String>()
     private var realtimeTimelineRetiredItemOrder: [String] = []
     private var pendingRealtimeTimelineFlushTask: Task<Void, Never>?
-    private var realtimeTranscriptsPendingDelivery: [String] = []
+    private var realtimeTranscriptsPendingDelivery: [OrderedRealtimeTranscript] = []
     private let realtimeTranscriptDeliveryCondition = NSCondition()
     private var realtimeTranscriptDeliveryCounts: [UInt64: Int] = [:]
     #if DEBUG
@@ -160,6 +167,7 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
     #endif
 
     var onTerminalTranscriptReady: ((
+        _ itemID: String?,
         _ text: String,
         _ language: LanguageOption,
         _ confidence: Double
@@ -174,6 +182,11 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
             terminalTranscriptHandler = newValue
             stateLock.unlock()
         }
+    }
+
+    var onStudyTranscript: (@Sendable (String, StudySegment.Channel, StudyTextUpdate) -> Void)? {
+        get { stateLock.withLock { studyTranscriptHandler } }
+        set { stateLock.withLock { studyTranscriptHandler = newValue } }
     }
 
     func start(language: LanguageOption, model: OpenAIRealtimeTranscriptionModel) async throws {
@@ -344,15 +357,15 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
         droppedAudioByteCount = 0
         stateLock.unlock()
         waitForRealtimeTranscriptDeliveries(generation: stoppingGeneration)
-        terminalTranscripts.forEach { text in
+        terminalTranscripts.forEach { transcript in
             if let handler {
-                handler(text, terminalTranscriptLanguage, 0.5)
+                if !transcript.text.isEmpty { handler(transcript.text, terminalTranscriptLanguage, 0.5) }
             } else if let storedTerminalTranscriptHandler {
-                storedTerminalTranscriptHandler(text, terminalTranscriptLanguage, 0.5)
-            } else {
+                storedTerminalTranscriptHandler(transcript.itemID, transcript.text, terminalTranscriptLanguage, 0.5)
+            } else if !transcript.text.isEmpty {
                 terminalTranscriptDelegate?.liveSpeechTranscriber(
                     proxyTranscriber,
-                    didRecognize: text,
+                    didRecognize: transcript.text,
                     language: terminalTranscriptLanguage,
                     confidence: 0.5
                 )
@@ -613,9 +626,16 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
                     generation: generation
                 )
             case .translationOnly:
+                let appendOnly = event.type == "session.input_transcript.delta"
+                if appendOnly {
+                    publishStudyTranscript(delta, channel: .source,
+                                           update: .confirmedDelta(audioMilliseconds: event.elapsedMilliseconds),
+                                           generation: generation)
+                }
                 appendRealtimeTranslationInputDelta(
                     delta,
-                    generation: generation
+                    generation: generation,
+                    publishesStudySnapshot: !appendOnly
                 )
             }
         case "conversation.item.input_audio_transcription.completed",
@@ -635,7 +655,8 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
                 realtimeTranslationInputPublishThrottle.finish(finalText: transcript) { [weak self] text in
                     self?.publishRealtimeTranslationInputTranscript(
                         text,
-                        generation: generation
+                        generation: generation,
+                        final: true
                     )
                 }
             }
@@ -649,6 +670,9 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
             guard outputMode == .translationOnly,
                   let delta = event.delta,
                   !delta.isEmpty else { return }
+            publishStudyTranscript(delta, channel: .translation,
+                                   update: .confirmedDelta(audioMilliseconds: event.elapsedMilliseconds),
+                                   generation: generation)
             appendRealtimeTranslationOutputDelta(
                 delta,
                 generation: generation
@@ -659,7 +683,8 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
             realtimeTranslationOutputPublishThrottle.finish(finalText: event.transcript) { [weak self] text in
                 self?.publishTranslatedTranscript(
                     text,
-                    generation: generation
+                    generation: generation,
+                    final: true
                 )
             }
         case "session.output_audio.delta":
@@ -727,7 +752,8 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
             guard shouldPublish else { return }
             self?.publishRecognizedTranscript(
                 text,
-                generation: generation
+                generation: generation,
+                itemID: itemID
             )
         }
     }
@@ -860,9 +886,7 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
         }
 
         guard let id, !id.isEmpty else {
-            if let completedText, !completedText.isEmpty {
-                realtimeTranscriptsPendingDelivery.append(completedText)
-            }
+            realtimeTranscriptsPendingDelivery.append(.init(itemID: nil, text: completedText ?? ""))
             return .empty
         }
 
@@ -895,8 +919,8 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
         )
     }
 
-    private func drainCompletedRealtimeTranscriptsLocked() -> [String] {
-        var transcripts: [String] = []
+    private func drainCompletedRealtimeTranscriptsLocked() -> [OrderedRealtimeTranscript] {
+        var transcripts: [OrderedRealtimeTranscript] = []
         for id in orderedInputTranscriptItemIDsLocked() {
             guard let item = realtimeTimelineItems[id] else { continue }
             if !item.hasLifecycleMetadata || hasUnresolvedPredecessorLocked(for: id) {
@@ -916,9 +940,7 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
                 forKey: transcriptBufferID(for: id)
             )?.reset()
             isRealtimeTimelineOrderCacheDirty = true
-            if let text = item.completedText, !text.isEmpty {
-                transcripts.append(text)
-            }
+            transcripts.append(.init(itemID: id, text: item.completedText ?? ""))
         }
         pruneUnreferencedRealtimeTimelineMetadataLocked()
         return transcripts
@@ -1104,13 +1126,13 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
             }
             endRealtimeTranscriptDelivery(generation: generation)
         }
-        transcripts.forEach { text in
+        transcripts.forEach { transcript in
             if let storedTerminalTranscriptHandler {
-                storedTerminalTranscriptHandler(text, callbackLanguage, 0.5)
-            } else {
+                storedTerminalTranscriptHandler(transcript.itemID, transcript.text, callbackLanguage, 0.5)
+            } else if !transcript.text.isEmpty {
                 delegate?.liveSpeechTranscriber(
                     proxyTranscriber,
-                    didRecognize: text,
+                    didRecognize: transcript.text,
                     language: callbackLanguage,
                     confidence: 0.5
                 )
@@ -1212,12 +1234,14 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
 
     private func appendRealtimeTranslationInputDelta(
         _ delta: String,
-        generation: UInt64
+        generation: UInt64,
+        publishesStudySnapshot: Bool
     ) {
         realtimeTranslationInputPublishThrottle.append(delta) { [weak self] text in
             self?.publishRealtimeTranslationInputTranscript(
                 text,
-                generation: generation
+                generation: generation,
+                publishesStudySnapshot: publishesStudySnapshot
             )
         }
     }
@@ -1236,9 +1260,12 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
 
     private func publishRecognizedTranscript(
         _ text: String,
-        generation: UInt64
+        generation: UInt64,
+        itemID: String?
     ) {
         guard let callback = delegateSnapshotIfCurrent(generation: generation) else { return }
+        publishStudyTranscript(text, channel: .source, update: .snapshot(itemID: itemID, final: false),
+                               generation: generation)
         callback.delegate.liveSpeechTranscriber(
             callback.proxyTranscriber,
             didRecognize: text,
@@ -1249,9 +1276,15 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
 
     private func publishRealtimeTranslationInputTranscript(
         _ text: String,
-        generation: UInt64
+        generation: UInt64,
+        final: Bool = false,
+        publishesStudySnapshot: Bool = true
     ) {
         guard let callback = delegateSnapshotIfCurrent(generation: generation) else { return }
+        if publishesStudySnapshot {
+            publishStudyTranscript(text, channel: .source, update: .snapshot(itemID: nil, final: final),
+                                   generation: generation)
+        }
         callback.delegate.liveSpeechTranscriber(
             callback.proxyTranscriber,
             didRecognizeSourceTranscript: text,
@@ -1261,15 +1294,28 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
 
     private func publishTranslatedTranscript(
         _ text: String,
-        generation: UInt64
+        generation: UInt64,
+        final: Bool = false
     ) {
         guard let callback = delegateSnapshotIfCurrent(generation: generation) else { return }
+        if final {
+            publishStudyTranscript(text, channel: .translation, update: .snapshot(itemID: nil, final: true),
+                                   generation: generation)
+        }
         callback.delegate.liveSpeechTranscriber(
             callback.proxyTranscriber,
             didTranslate: text,
             language: callback.language,
             confidence: 0.5
         )
+    }
+
+    private func publishStudyTranscript(_ text: String, channel: StudySegment.Channel,
+                                        update: StudyTextUpdate, generation: UInt64) {
+        let handler = stateLock.withLock {
+            connectionGeneration == generation ? studyTranscriptHandler : nil
+        }
+        handler?(text, channel, update)
     }
 
     private func publishOutputAudioIfCurrent(
@@ -1373,19 +1419,13 @@ final class OpenAIRealtimeTranscriber: @unchecked Sendable {
     @discardableResult
     private func resetRealtimeTranscriptBuffers(
         flushingTerminalTranscripts: Bool = false
-    ) -> [String] {
+    ) -> [OrderedRealtimeTranscript] {
         realtimeTranscriptBufferLock.lock()
-        let terminalTranscripts: [String]
+        let terminalTranscripts: [OrderedRealtimeTranscript]
         if flushingTerminalTranscripts {
-            let terminalTimelineTranscripts: [String] = orderedInputTranscriptItemIDsLocked().compactMap { id in
-                guard let item = realtimeTimelineItems[id],
-                      item.isTerminal,
-                      let text = item.completedText,
-                      !text.isEmpty
-                else {
-                    return nil
-                }
-                return text
+            let terminalTimelineTranscripts: [OrderedRealtimeTranscript] = orderedInputTranscriptItemIDsLocked().compactMap { id in
+                guard let item = realtimeTimelineItems[id], item.isTerminal else { return nil }
+                return .init(itemID: id, text: item.completedText ?? "")
             }
             terminalTranscripts = realtimeTranscriptsPendingDelivery + terminalTimelineTranscripts
         } else {
@@ -1710,6 +1750,7 @@ private struct OpenAIRealtimeTranscriptionEvent: Decodable {
     let item: OpenAIRealtimeConversationItem?
     let delta: String?
     let transcript: String?
+    let elapsedMilliseconds: Int64?
     let error: OpenAIRealtimeErrorBody?
 
     private enum CodingKeys: String, CodingKey {
@@ -1719,6 +1760,7 @@ private struct OpenAIRealtimeTranscriptionEvent: Decodable {
         case item
         case delta
         case transcript
+        case elapsedMilliseconds = "elapsed_ms"
         case error
     }
 }
@@ -1755,8 +1797,13 @@ private enum OpenAIRealtimeTranscriberError: LocalizedError {
     }
 }
 
+private struct OrderedRealtimeTranscript {
+    let itemID: String?
+    let text: String
+}
+
 private struct RealtimeTimelineRetentionResult {
-    let transcripts: [String]
+    let transcripts: [OrderedRealtimeTranscript]
     let didOverflow: Bool
 
     static let empty = RealtimeTimelineRetentionResult(

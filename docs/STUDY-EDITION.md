@@ -2,7 +2,7 @@
 
 ## Этап 1. Исходная версия
 
-Study Edition добавит к нативному AirTranslate браузерную транскрипцию для Yomitan, историю занятий и Markdown для Obsidian. На этапе подготовки доступна базовая версия AirTranslate 1.17.0 (сборка 1170). Зафиксированный upstream — [`c177992`](https://github.com/himomohi/AirTranslate/commit/c1779923cba6261db56be95d2d25a733a55e766c), тег `v1.17.0`.
+Study Edition добавляет к нативному AirTranslate историю занятий и локальный API. Браузерная транскрипция для Yomitan и Markdown для Obsidian запланированы на этапы 3 и 4. Зафиксированный upstream — [`c177992`](https://github.com/himomohi/AirTranslate/commit/c1779923cba6261db56be95d2d25a733a55e766c), тег `v1.17.0` (сборка 1170).
 
 Проверка от 16 ноября 2026 года на MacBook Pro M3 Pro, 18 ГБ, macOS 27.2 (`26B123`). Активны Command Line Tools со Swift 6.4.2 и SDK macOS 27.2. Полный Xcode не обнаружен, `xcodebuild -version` требует его установки.
 
@@ -15,11 +15,19 @@ Study Edition добавит к нативному AirTranslate браузерн
 | `python3 -m unittest discover -s script/tests -v` | 14 тестов прошли. |
 | `swift build -c release`, `swift test --no-parallel` | Заблокированы на компиляции `AirTranslateApp.swift` и других SwiftUI-файлов. В установленном тулчейне отсутствует плагин `SwiftUIMacros` для `@State`. Запуск собранного из исходников приложения и полный Swift-набор ожидают Xcode. |
 
-Системная проверка `LanguageAvailability().status(from: en-US, to: ru-RU)` вернула `installed` на этом Mac. Сам интерфейс AirTranslate берёт языки из `LanguageOption.supported`, где `ru-RU` пока отсутствует.
+Системная проверка `LanguageAvailability().status(from: en-US, to: ru-RU)` вернула `installed`. В исходном AirTranslate `v1.17.0` список языков ещё не содержал `ru-RU`.
+
+## Этап 2. Русский перевод и локальные данные
+
+На Xcode 27.2 до изменений прошли 636 upstream-тестов. Перевод тестовой фразы из `en-US` в `ru-RU` через системный Apple Translation проверен локально. Для живого перевода в приложении выберите **Apple Mode**, **From → English**, **To → Russian**. При запросе загрузите языковые пакеты через AirTranslate.
+
+При захвате Study Edition пишет подтверждённые сегменты в SQLite внутри Application Support. Встроенный Hummingbird обслуживает REST и SSE на `127.0.0.1:8765`. Команды ручной проверки, формат событий и управление портом описаны в [документации API](STUDY-API.md).
+
+На Xcode 27.2 прошли 642 Swift-теста, 14 Python-тестов и проверка упаковки. Release-сборка запустилась. В живой проверке с синтетическим аудио Mac распознал английскую фразу, перевёл её на русский и отдал подтверждённый сегмент через REST и SSE. После перезапуска с временной SQLite-базой идентификаторы, текст, переводы и таймкоды совпали. Сервер отклонил запросы с посторонним Host, посторонним Origin и без управляющего токена. На этом Mac проверка прошла на порту `18765`, потому что `8765` уже использовался.
 
 ## Как воспроизвести базовую проверку
 
-Для запуска приложения нужна macOS 26 или новее. Для сборки из исходников upstream требует полный Xcode 27 с SDK macOS 27 и Swift 6.4 или новее. Xcode 27 запускается на Apple Silicon с macOS Tahoe 26.6 или новее. Python 3 нужен для тестов инструмента диагностики. У базового Swift-пакета нет внешних зависимостей. [Требования Apple к Xcode](https://developer.apple.com/xcode/system-requirements/) · [Документация AirTranslate](DEVELOPMENT.md)
+Для запуска приложения нужна macOS 26 или новее. Для сборки из исходников upstream требует полный Xcode 27 с SDK macOS 27 и Swift 6.4 или новее. Xcode 27 запускается на Apple Silicon с macOS Tahoe 26.6 или новее. Python 3 нужен для тестов инструмента диагностики. SwiftPM при первой сборке загружает Hummingbird и версии из `Package.resolved`. [Требования Apple к Xcode](https://developer.apple.com/xcode/system-requirements/) · [Документация AirTranslate](DEVELOPMENT.md)
 
 ```bash
 git clone git@github.com:VGorHub/AirTranslate-Study-Edition.git
@@ -55,13 +63,10 @@ swift build -c release
 
 ## План следующих этапов
 
-1. **Этап 2. Backend и данные.** Начать с чистой проверки под полным Xcode. Добавить типы событий в `Sources/AirTranslateCore/` и небольшой адаптер к `TranslationSessionStore`. В `Sources/AirTranslate/Study/` разместить SQLite-хранилище и HTTP-сервис. Использовать версионируемую схему, транзакции и один сериализованный путь записи. Сохранять метаданные занятия, стабильные ID, порядок, источник времени и подтверждённую ревизию сегмента. Partial держать в памяти. После аварийного завершения показывать прерванное занятие с уже сохранёнными данными. Проверить повторы, исправления, финальные события при Stop, сбой записи и восстановление из БД. [SQLite WAL](https://www.sqlite.org/wal.html)
-
-   Для HTTP проверить Hummingbird 2 как встраиваемый SwiftPM-сервер с потоковым телом ответа. Он добавляет зависимости к самодостаточному пакету. Проверить сборку, завершение SSE и bind к `127.0.0.1`. Использовать один origin `http://127.0.0.1:8765` с настраиваемым портом. Для защиты от сторонних страниц проверять `Host`, оставить CORS выключенным, для управляющих методов требовать точный `Origin` и токен в заголовке. Задать REST для состояния, списка занятий и чтения сегментов по курсору. В SSE передавать partial, final, translation и status. Согласовать снимок и подключение SSE по порядковому номеру. При отставании клиента ограничивать буфер и восстанавливать его из снимка. [Hummingbird](https://github.com/hummingbird-project/hummingbird)
-2. **Этап 3. Веб-интерфейс.** Добавить `Web/` с React, TypeScript, shadcn/ui на Radix, Tailwind CSS и Lucide. Vite упаковывает статические файлы, которые отдаёт Swift-сервер. Подключить артефакты к `script/build_and_run.sh` и `Release/build_open_source_release.sh`. Сделать поиск, переключатель перевода, тему, автопрокрутку и историю. Для Yomitan использовать обычные текстовые HTML-узлы и отдельный partial. Узел подтверждённого исходника сохраняется при поступлении следующих сегментов и поздних переводов. Измерить длинную историю в Chrome. При необходимости добавить постраничную загрузку или виртуализацию с сохранением видимого выделения и словарного контекста. [shadcn/ui для Vite](https://ui.shadcn.com/docs/installation/vite) · [Yomitan](https://yomitan.wiki/)
-3. **Этап 4. Markdown.** Читать подтверждённые сегменты из SQLite в стабильном порядке. Добавить форматтер в `Sources/AirTranslateCore/` и ручной экспорт из SwiftUI с `NSSavePanel` для выбора папки и имени. Включить название, дату, длительность, ID, языки, ASR-движок, таймкоды, оригинал и доступный перевод. Проверить экранирование YAML, многострочный текст, Unicode и запись файла.
-4. **Этап 5. Стабилизация.** Проверить системный звук и ключевые режимы каждого провайдера, перезапуск, нагрузку трёхчасовой сессии и историю после reload. В Chrome с Yomitan проверить выделение, наведение и карточку через AnkiConnect. Открыть экспорт в Obsidian и повторить сборку из чистого клона.
-5. **Этап 6. AI Brief.** Добавить отдельный конспект и отдельный Markdown. Официальная установка AI Elements предполагает Next.js и AI SDK. Для статического React-интерфейса со Swift API подходит `assistant-ui` с custom runtime, если появится сценарий диалога. Для разовой генерации файла достаточно обычных компонентов shadcn/ui. [AI Elements](https://elements.ai-sdk.dev/docs/setup) · [assistant-ui](https://www.assistant-ui.com/docs/runtimes/custom/overview)
+1. **Этап 3. Веб-интерфейс.** Добавить `Web/` с React, TypeScript, shadcn/ui на Radix, Tailwind CSS и Lucide. Vite упаковывает статические файлы, которые отдаёт Swift-сервер. Подключить артефакты к `script/build_and_run.sh` и `Release/build_open_source_release.sh`. Сделать поиск, переключатель перевода, тему, автопрокрутку и историю. Для Yomitan использовать обычные текстовые HTML-узлы и отдельный partial. Узел подтверждённого исходника сохраняется при поступлении следующих сегментов и поздних переводов. Измерить длинную историю в Chrome. При необходимости добавить постраничную загрузку или виртуализацию с сохранением видимого выделения и словарного контекста. [shadcn/ui для Vite](https://ui.shadcn.com/docs/installation/vite) · [Yomitan](https://yomitan.wiki/)
+2. **Этап 4. Markdown.** Читать подтверждённые сегменты из SQLite в стабильном порядке. Добавить форматтер и ручной экспорт из SwiftUI с `NSSavePanel` для выбора папки и имени. Включить название, дату, длительность, ID, языки, ASR-движок, таймкоды, оригинал и доступный перевод. Проверить экранирование YAML, многострочный текст, Unicode и запись файла.
+3. **Этап 5. Стабилизация.** Проверить системный звук и ключевые режимы каждого провайдера, перезапуск, нагрузку трёхчасовой сессии и историю после reload. В Chrome с Yomitan проверить выделение, наведение и карточку через AnkiConnect. Открыть экспорт в Obsidian и повторить сборку из чистого клона.
+4. **Этап 6. AI Brief.** Добавить отдельный конспект и отдельный Markdown. Официальная установка AI Elements предполагает Next.js и AI SDK. Для статического React-интерфейса со Swift API подходит `assistant-ui` с custom runtime, если появится сценарий диалога. Для разовой генерации файла достаточно обычных компонентов shadcn/ui. [AI Elements](https://elements.ai-sdk.dev/docs/setup) · [assistant-ui](https://www.assistant-ui.com/docs/runtimes/custom/overview)
 
 ### Совместимость веб-стека
 

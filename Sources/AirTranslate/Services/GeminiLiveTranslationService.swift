@@ -14,6 +14,7 @@ protocol GeminiLiveTranslationServiceDelegate: AnyObject {
         didReceiveOutputTranscript text: String,
         languageCode: String?
     )
+    func geminiLiveTranslationService(_ service: GeminiLiveTranslationService, didFinishOutput interrupted: Bool)
     func geminiLiveTranslationService(
         _ service: GeminiLiveTranslationService,
         didOutputAudioPCM16Base64 audio: String,
@@ -21,6 +22,10 @@ protocol GeminiLiveTranslationServiceDelegate: AnyObject {
     )
     func geminiLiveTranslationServiceDidInterruptOutputAudio(_ service: GeminiLiveTranslationService)
     func geminiLiveTranslationService(_ service: GeminiLiveTranslationService, didFail error: Error)
+}
+
+extension GeminiLiveTranslationServiceDelegate {
+    func geminiLiveTranslationService(_ service: GeminiLiveTranslationService, didFinishOutput interrupted: Bool) {}
 }
 
 final class GeminiLiveTranslationService: @unchecked Sendable {
@@ -700,6 +705,11 @@ final class GeminiLiveTranslationService: @unchecked Sendable {
                 )
             }
         }
+        if content.interrupted == true || content.generationComplete == true || content.outputTranscription?.finished == true {
+            notifyDelegate(connectionGeneration: connectionGeneration) {
+                $0.geminiLiveTranslationService(self, didFinishOutput: content.interrupted == true)
+            }
+        }
         for part in content.modelTurn?.parts ?? [] {
             guard let inlineData = part.inlineData,
                   let audioData = inlineData.data,
@@ -1112,6 +1122,7 @@ private struct GeminiLiveServerContent: Decodable {
     let outputTranscription: GeminiLiveTranscript?
     let modelTurn: GeminiLiveModelTurn?
     let interrupted: Bool?
+    let generationComplete: Bool?
 }
 
 private struct GeminiLiveTranscript: Decodable {

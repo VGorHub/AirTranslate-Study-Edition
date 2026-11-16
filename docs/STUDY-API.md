@@ -1,0 +1,53 @@
+# Локальный API AirTranslate Study Edition
+
+## Запуск и ручная проверка
+
+Соберите и откройте AirTranslate через `./script/build_and_run.sh --verify`. Сервер запускается вместе с приложением на `127.0.0.1:8765`. Для смены порта закройте AirTranslate, выполните команду и снова запустите приложение.
+
+```bash
+defaults write dev.appcaster.AirTranslate StudyPort -int 18765
+```
+
+Порт по умолчанию возвращает `defaults delete dev.appcaster.AirTranslate StudyPort`. При занятом порте запись продолжает работать. Ошибку запуска сервера можно найти в Console в категории `StudyHTTP`.
+
+Для разового запуска на другом порту используйте `AIRTRANSLATE_STUDY_PORT=18765 ./script/build_and_run.sh --verify`. Переменная имеет приоритет над `StudyPort` на время процесса. Подставьте выбранный порт в запросы из примеров.
+
+Для проверки на синтетическом аудио создайте отдельную временную базу.
+
+```bash
+study_test_dir="$(mktemp -d)"
+AIRTRANSLATE_STUDY_DATA_DIRECTORY="$study_test_dir" AIRTRANSLATE_STUDY_PORT=18765 ./script/build_and_run.sh --verify
+```
+
+1. Проверьте состояние и откройте SSE в отдельном окне Терминала.
+
+   ```bash
+   curl -fsS http://127.0.0.1:8765/api/v1/status
+   curl -fsSN http://127.0.0.1:8765/api/v1/events
+   ```
+
+2. В AirTranslate выберите **Apple Mode**, **Mac Audio**, **English → Russian** и нажмите **Start**. Воспроизведите короткое английское аудио. В SSE появится `status` с ID занятия, затем `partial`, `final` и `translation` по мере получения результатов.
+3. Скопируйте `activeSession.session.id` из `/status` во время записи или `sessions[0].session.id` из `/sessions` после остановки. Запросите `/api/v1/sessions/<id>/segments`. После остановки и повторного запуска приложения подтвердите, что возвращаются те же ID, подтверждённые сегменты и переводы.
+
+## REST
+
+| Метод и путь | Назначение |
+| --- | --- |
+| GET `/api/v1/status` | `activeSession`, `storageAvailable`, `cursor` потока. Поле `activeSession` опускается при отсутствии записи. |
+| GET `/api/v1/sessions?offset=0&limit=50` | Список по дате начала, новые первыми. Продолжение в `nextOffset`. Максимум 100 за запрос. |
+| GET `/api/v1/sessions/:id/segments?after=0&limit=200` | Подтверждённые сегменты по `position`, текущее состояние сессии, partial активной записи и курсор SSE. Продолжение в `nextPosition`. Максимум 500 за запрос. |
+| GET `/api/v1/events?after=…` | SSE. При автоматическом переподключении `Last-Event-ID` имеет приоритет над параметром `after`. |
+| GET `/api/v1/control-token` | Токен текущего процесса для управляющих POST. Храните его в памяти страницы. |
+| POST `/api/v1/capture/{start,stop,pause,resume}` | Запускает штатное действие SwiftUI. `202` означает, что команда принята. Если переход недоступен, возвращается `409`. Итог проверяйте через статус или события. |
+
+Ожидаемый Host для порта по умолчанию — `127.0.0.1:8765`. Управляющему POST нужны `Origin: http://127.0.0.1:8765` и `X-AirTranslate-Token`. Для запросов из браузера сервер проверяет также `Sec-Fetch-Site`, если заголовок присутствует. Cross-origin запросы отклоняются, CORS выключен, ответы API помечены `Cache-Control: no-store`.
+
+## События и данные
+
+- Начальная загрузка получает `cursor` из снимка и передаёт его в SSE. `resync` означает, что курсор отсутствует, относится к прошлому процессу или уже выпал из окна повтора. Перечитайте историю и актуальные partial, затем подключитесь с новым курсором.
+- `partial` и `final` одной реплики используют одинаковый `segment.id`. `retract` удаляет временный узел по `segmentID`. `translation` дополняет существующий исходник для его подтверждённой ревизии. `status` передаёт переходы сессии. При финальном статусе очистите её временные узлы.
+- `channel=source` обозначает исходник. `channel=translation` обозначает самостоятельный перевод с таймкодом. Некоторые realtime-провайдеры присылают два потока со своими границами. Привязка по позиции в этих случаях может связать разные реплики. Перевод обычного Apple-пайплайна приходит в поле `translation` исходного сегмента.
+- `timing=audio` означает время из аудиометаданных. `timing=receipt` означает приблизительную отметку от запуска записи. `endMilliseconds` может отсутствовать. OpenAI Realtime Translate подтверждает фрагменты как append-only поток. Такие фрагменты сохраняются небольшими блоками в течение записи и могут обновлять последний открытый блок по тому же ID. [Формат событий OpenAI](https://developers.openai.com/api/reference/resources/realtime/translation-server-events)
+- SQLite находится в `~/Library/Application Support/AirTranslate/Study/sessions.sqlite3`. При перезапуске незакрытая сессия получает статус `interrupted` с уже сохранённым текстом. Временные partial живут в памяти. Штатная библиотека TXT управляется параметром **Save Transcript Files**.
+
+Код сервера, захвата событий и хранилища находится в `Sources/AirTranslate/Study/`. Обработка ошибок хранения и повторная запись очереди идут вне UI. Если база временно недоступна, API сообщает `storageAvailable: false`, а накопленные подтверждённые результаты остаются в памяти до повторной попытки.

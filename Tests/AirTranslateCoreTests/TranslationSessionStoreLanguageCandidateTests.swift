@@ -4,6 +4,30 @@ import Testing
 
 @Suite(.serialized)
 struct TranslationSessionStoreLanguageCandidateTests {
+    @MainActor
+    @Test
+    func appleModeRestoresRussianAsTargetLanguage() throws {
+        let name = "AirTranslateRussian-\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+        defer {
+            defaults.removePersistentDomain(forName: name)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let session = TranslationSessionStore(modelAvailabilityProvider: { _, _ in [:] },
+                                              settingsDefaults: defaults, transcriptsDirectoryURL: directory)
+        session.useAppleDefaultMode()
+        session.useQuickSourceLanguage(.english)
+        session.useQuickTargetLanguage(.russian)
+        let restored = TranslationSessionStore(modelAvailabilityProvider: { _, _ in [:] },
+                                               settingsDefaults: defaults, transcriptsDirectoryURL: directory)
+
+        #expect(restored.sourceLanguage == .english)
+        #expect(restored.targetLanguage == .russian)
+        #expect(restored.isUsingAppleTextTranslation)
+        #expect(!restored.isTranscribeOnlyMode)
+    }
+
     @Test
     func supportedLanguageOrderIsUsedForAutoDetectionCandidateSelection() {
         let candidates = LanguageOption.prioritizedAutoDetectionCandidates(

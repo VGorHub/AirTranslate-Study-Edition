@@ -285,7 +285,7 @@ struct QwenRealtimeTranslationServiceTests {
         )
         defer { service.stop() }
         let results = QwenTestResults()
-        service.onSourceTranscript = { await results.addSource($0, $1) }
+        service.onSourceTranscript = { text, final, _ in await results.addSource(text, final) }
         try await service.start(
             workspaceID: "ws-test", targetLanguage: .korean, audioOutputEnabled: false,
             model: .audio31RealtimePlus
@@ -349,8 +349,8 @@ struct QwenRealtimeTranslationServiceTests {
         let service = makeService(socket)
         defer { service.stop() }
         let results = QwenTestResults()
-        service.onSourceTranscript = { await results.addSource($0, $1) }
-        service.onTranslation = { text, final in
+        service.onSourceTranscript = { text, final, _ in await results.addSource(text, final) }
+        service.onTranslation = { text, final, _ in
             try? await Task.sleep(for: .milliseconds(20))
             await results.addTranslation(text, final)
         }
@@ -386,7 +386,7 @@ struct QwenRealtimeTranslationServiceTests {
         let service = makeService(socket)
         defer { service.stop() }
         let results = QwenTestResults()
-        service.onTranslation = { await results.addTranslation($0, $1) }
+        service.onTranslation = { text, final, _ in await results.addTranslation(text, final) }
         service.onError = { await results.fail($0) }
         try await service.start(workspaceID: "ws-test", targetLanguage: .korean, audioOutputEnabled: false)
         socket.emit(["type": "response.text.delta", "item_id": "one", "delta": "안녕"])
@@ -483,7 +483,7 @@ struct QwenRealtimeTranslationServiceTests {
         let service = QwenRealtimeTranslationService(keyProvider: { "test-only" }, connectionFactory: { _ in pool.next() })
         defer { service.stop() }
         let results = QwenTestResults()
-        service.onTranslation = { await results.addTranslation($0, $1) }
+        service.onTranslation = { text, final, _ in await results.addTranslation(text, final) }
         try await service.start(workspaceID: "ws-test", targetLanguage: .korean, audioOutputEnabled: false)
         old.emit(["type": "response.text.done", "item_id": "same", "text": "first"])
         try await waitUntil { await results.translation.count == 1 }

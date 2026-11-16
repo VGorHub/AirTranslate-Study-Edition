@@ -1,4 +1,5 @@
 import AppKit
+import OSLog
 import SwiftUI
 
 @main
@@ -69,8 +70,12 @@ private struct CaptureCommands: Commands {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var session: TranslationSessionStore?
+    private var studyBackend: StudyBackend?
+    private var studyServer: Task<Void, Never>?
+    private var studyHeartbeat: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        startStudyServices()
         if let appIcon = NSImage(named: "AppIcon") {
             NSApp.applicationIconImage = appIcon
         }
@@ -78,7 +83,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         session?.prepareForTermination()
+        guard let capture = session?.studyCapture else { return .terminateNow }
+        studyHeartbeat?.cancel()
+        studyServer?.cancel()
+        Task { @MainActor in
+            await capture.close()
+            await studyBackend?.disconnectSubscribers()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+
+    @MainActor
+    private func startStudyServices() {
+        guard let session else { return }
+        let environment = ProcessInfo.processInfo.environment
+        let support: URL
+        if let directory = environment["AIRTRANSLATE_STUDY_DATA_DIRECTORY"], directory.hasPrefix("/") {
+            support = URL(filePath: directory, directoryHint: .isDirectory)
+        } else {
+            support = URL.applicationSupportDirectory.appending(path: "AirTranslate/Study", directoryHint: .isDirectory)
+        }
+        let backend = StudyBackend(databaseURL: support.appending(path: "sessions.sqlite3"))
+        self.studyBackend = backend
+        session.studyCapture = StudyCapture(backend: backend)
+
+        let configuredPort = environment["AIRTRANSLATE_STUDY_PORT"].flatMap(Int.init)
+            ?? UserDefaults.standard.integer(forKey: "StudyPort")
+        let port = (1...65535).contains(configuredPort) ? configuredPort : 8765
+        let server = StudyHTTPServer(port: port, backend: backend) { [weak session] action in
+            session?.handleStudyCaptureAction(action) ?? false
+        }
+        studyServer = Task {
+            do {
+                try await server.run()
+            } catch {
+                guard !Task.isCancelled else { return }
+                Logger(subsystem: "dev.appcaster.AirTranslate", category: "StudyHTTP")
+                    .error("Study server failed on loopback port \(port): \(String(describing: error), privacy: .private)")
+            }
+        }
+        studyHeartbeat = Task {
+            await backend.flush()
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(5)) }
+                catch { break }
+                await backend.tick()
+            }
+        }
     }
 }

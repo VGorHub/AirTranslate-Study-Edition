@@ -55,7 +55,7 @@ final class QwenRealtimeTranslationService: @unchecked Sendable {
     static let maximumPendingAudioChunks = 48
 
     // partial은 새 delta만, final은 해당 발화 전체 문자열이다.
-    typealias TextHandler = @Sendable (String, Bool) async -> Void
+    typealias TextHandler = @Sendable (String, Bool, String) async -> Void
     typealias AudioHandler = @Sendable (Data) async -> Void
     typealias ErrorHandler = @Sendable (Error) async -> Void
     typealias ConnectionFactory = @Sendable (URLRequest) -> any QwenWebSocketConnection
@@ -303,7 +303,7 @@ final class QwenRealtimeTranslationService: @unchecked Sendable {
     }
 
     private enum Delivery {
-        case text(TextHandler?, String, Bool)
+        case text(TextHandler?, String, Bool, String)
         case audio(AudioHandler?, Data)
     }
 
@@ -338,9 +338,9 @@ final class QwenRealtimeTranslationService: @unchecked Sendable {
                     let result: Delivery?
                     switch event {
                     case let .source(id, text, final):
-                        result = try sourceLedger.apply(id: id, text: text, final: final).map { .text(sourceHandler, $0, final) }
+                        result = try sourceLedger.apply(id: id, text: text, final: final).map { .text(sourceHandler, $0, final, id) }
                     case let .translation(id, text, final):
-                        result = try translationLedger.apply(id: id, text: text, final: final).map { .text(translationHandler, $0, final) }
+                        result = try translationLedger.apply(id: id, text: text, final: final).map { .text(translationHandler, $0, final, id) }
                     case .audio(let data):
                         guard audioOutputEnabled else { throw QwenTranslationError.invalidResponse }
                         result = .audio(audioHandler, data)
@@ -369,7 +369,7 @@ final class QwenRealtimeTranslationService: @unchecked Sendable {
                 if let delivery {
                     guard lock.withLock({ generation == token && phase != .stopped && phase != .failed }) else { return }
                     switch delivery {
-                    case let .text(handler, text, final): await handler?(text, final)
+                    case let .text(handler, text, final, id): await handler?(text, final, id)
                     case let .audio(handler, data): await handler?(data)
                     }
                     lock.withLock { if generation == token { deliveriesInFlight -= 1 } }
@@ -429,7 +429,7 @@ final class QwenRealtimeTranslationService: @unchecked Sendable {
 
     static func languageCode(_ language: LanguageOption) throws -> String {
         guard let code = language.id.lowercased().split(separator: "-").first.map(String.init),
-              ["en", "ko", "ja", "zh", "es", "fr", "de"].contains(code) else { throw QwenTranslationError.configuration }
+              ["en", "ko", "ja", "zh", "es", "fr", "de", "ru"].contains(code) else { throw QwenTranslationError.configuration }
         return code
     }
 
@@ -475,6 +475,7 @@ final class QwenRealtimeTranslationService: @unchecked Sendable {
         case "es": "Spanish"
         case "fr": "French"
         case "de": "German"
+        case "ru": "Russian"
         default: code
         }
     }

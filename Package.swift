@@ -10,11 +10,14 @@ let package = Package(
     products: [
         .executable(name: "AirTranslate", targets: ["AirTranslate"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.28.1")
+    ],
     targets: [
         .target(name: "AirTranslateCore"),
         .executableTarget(
             name: "AirTranslate",
-            dependencies: ["AirTranslateCore"],
+            dependencies: ["AirTranslateCore", .product(name: "Hummingbird", package: "hummingbird")],
             linkerSettings: [
                 .linkedFramework("AVFAudio"),
                 .linkedFramework("AudioToolbox"),

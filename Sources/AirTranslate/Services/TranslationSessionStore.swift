@@ -442,29 +442,35 @@ private final class AudioSamplePipelineRegistry: @unchecked Sendable {
     }
 }
 
-private struct OpenAITerminalTranscript: Sendable {
-    let text: String
-    let language: LanguageOption
-    let confidence: Double
-    let transcriber: OpenAIRealtimeTranscriber
-}
-
-private final class OpenAITerminalTranscriptMailbox: @unchecked Sendable {
-    private let lock = NSLock()
-    private var transcripts: [OpenAITerminalTranscript] = []
-
-    func append(_ transcript: OpenAITerminalTranscript) {
-        lock.lock()
-        transcripts.append(transcript)
-        lock.unlock()
+private struct OpenAITranscriptDelivery: Sendable {
+    enum Kind: Sendable {
+        case terminal(itemID: String?, language: LanguageOption, confidence: Double)
+        case study(channel: StudySegment.Channel, update: OpenAIRealtimeTranscriber.StudyTextUpdate)
     }
 
-    func drain() -> [OpenAITerminalTranscript] {
-        lock.lock()
-        let drained = transcripts
-        transcripts.removeAll()
-        lock.unlock()
-        return drained
+    let transcriber: OpenAIRealtimeTranscriber
+    let text: String
+    let kind: Kind
+}
+
+private final class OpenAITranscriptMailbox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var transcripts: [OpenAITranscriptDelivery] = []
+
+    func append(_ transcript: OpenAITranscriptDelivery) -> Bool {
+        lock.withLock {
+            let needsDelivery = transcripts.isEmpty
+            transcripts.append(transcript)
+            return needsDelivery
+        }
+    }
+
+    func drain() -> [OpenAITranscriptDelivery] {
+        lock.withLock {
+            let drained = transcripts
+            transcripts.removeAll()
+            return drained
+        }
     }
 }
 
@@ -503,6 +509,8 @@ enum AutoDetectionLanguageChangePolicy {
 @Observable
 @MainActor
 final class TranslationSessionStore {
+    @ObservationIgnored var studyCapture: StudyCapture?
+    @ObservationIgnored private var studyMetaConnection = 0
     private static let maxTranslationCacheEntries = 2_000
     private static let largeTranscriptPresentationCharacterLimit = 4_000
     private static let largeTranscriptPresentationInterval: TimeInterval = 0.35
@@ -1062,7 +1070,18 @@ final class TranslationSessionStore {
         didSet { persistSelectedSettings() }
     }
     var microphoneInputDevices = MicrophoneDeviceCatalog.availableInputDevices()
-    var statusMessage = AppText.ready
+    var statusMessage = AppText.ready {
+        didSet {
+            guard let studyCapture else { return }
+            switch captureControlState.phase {
+            case .running: studyCapture.setState(.recording)
+            case .paused: studyCapture.setState(.paused)
+            case .reconnecting: studyCapture.setState(.reconnecting)
+            case .finishing: studyCapture.setState(.finishing)
+            case .idle, .starting: break
+            }
+        }
+    }
     var captureStartFailureMessage: String?
     var captureStartRecoveryAction: CaptureStartRecoveryAction?
     var toastMessage: String?
@@ -1092,8 +1111,7 @@ final class TranslationSessionStore {
     @ObservationIgnored private var metaVoiceTranscriber = MetaVoiceTranscribeService()
     @ObservationIgnored private var metaSessionRefreshTask: Task<Void, Never>?
     @ObservationIgnored nonisolated private let audioSamplePipelineRegistry = AudioSamplePipelineRegistry()
-    @ObservationIgnored nonisolated private let openAITerminalTranscriptMailbox =
-        OpenAITerminalTranscriptMailbox()
+    @ObservationIgnored nonisolated private let openAITranscriptMailbox = OpenAITranscriptMailbox()
     private let translator: AppleTranslationService
     private let openAITranslator = OpenAITranslationService()
     private let foundationTranscriptPolisher = FoundationTranscriptPolisher()
@@ -1535,6 +1553,7 @@ final class TranslationSessionStore {
                 resetLiveSessionState(clearsVisibleLines: true)
                 isRunning = true
                 isStarting = false
+                beginStudySession(configuration)
                 captureStartFailureMessage = nil
                 captureStartRecoveryAction = nil
                 statusMessage = AppText.listeningForSpeech(from: configuration.audioInputSource)
@@ -1625,7 +1644,7 @@ final class TranslationSessionStore {
         transcriptCheckpointTask?.cancel()
         transcriptCheckpointTask = nil
         openAITranscriber.stop()
-        flushOpenAITerminalTranscriptMailbox()
+        flushOpenAITranscriptMailbox()
         flushPendingRecognizedCaption()
         flushPendingCaptionPresentation()
         let hadTranscriptToSave = isTranscriptPersistenceEnabled
@@ -1633,6 +1652,7 @@ final class TranslationSessionStore {
             || !activeAutosaveSourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             )
         let didSaveTranscript = flushPendingTranscriptSave()
+        studyCapture?.setState(statusOverride == nil ? .completed : .interrupted)
         resetLiveSessionState(clearsVisibleLines: false)
         isPaused = false
         setCaptionersPaused(false)
@@ -1748,6 +1768,50 @@ final class TranslationSessionStore {
             usesJevSelection: isJevSelectionEnabled,
             appleTranslationOptions: appleTranslationOptions
         )
+    }
+
+    private func beginStudySession(_ configuration: StartConfiguration) {
+        guard let studyCapture else { return }
+        let engine = ProcessingEngine.current(for: self)
+        let model: String
+        switch engine {
+        case .apple: model = configuration.selectedModel.rawValue
+        case .openAI:
+            model = configuration.openAITranscriptionModel.isEnabled
+                ? configuration.openAITranscriptionModel.rawValue : configuration.openAITranslationModel.rawValue
+        case .gemini: model = configuration.geminiTranslationModel.rawValue
+        case .meta: model = configuration.metaTranscriptionModel.rawValue
+        case .azure: model = configuration.azureTranscriptionModel.rawValue
+        case .nari: model = configuration.nariTranscriptionModel.rawValue
+        case .grok: model = configuration.grokTranscriptionModel.rawValue
+        case .qwen: model = configuration.qwenTranslationModel.rawValue
+        }
+        let automaticSource = configuration.usesAppleSourceAutoDetection || isUsingProviderRealtimeTranslation
+            || isUsingGeminiTranscriptionMode || (engine == .nari && configuration.usesNariSourceAutoDetection)
+            || (engine == .grok && configuration.usesGrokSourceAutoDetection)
+        studyMetaConnection = 0
+        studyCapture.start(engine: engine.rawValue, model: model,
+                           sourceLanguage: automaticSource ? nil : configuration.sourceLanguage.id,
+                           targetLanguage: isTranscribeOnlyMode ? nil : configuration.targetLanguage.id)
+    }
+
+    func handleStudyCaptureAction(_ action: StudyHTTPServer.CaptureAction) -> Bool {
+        let state = captureControlState
+        switch action {
+        case .start:
+            guard state.phase == .idle else { return false }
+            start()
+        case .stop:
+            guard state.canToggleCapture, state.isRunning || state.isStarting else { return false }
+            stop()
+        case .pause:
+            guard state.canPause else { return false }
+            pause()
+        case .resume:
+            guard state.canResume else { return false }
+            resume()
+        }
+        return true
     }
 
     private func validatePipelineStart(
@@ -2043,6 +2107,10 @@ final class TranslationSessionStore {
         cancelTranslationSessionWarmup()
         transcriptCheckpointTask?.cancel()
         transcriptCheckpointTask = nil
+        if studyCapture != nil {
+            openAITranscriber.stop()
+            flushOpenAITranscriptMailbox()
+        }
         flushPendingRecognizedCaption()
         flushPendingCaptionPresentation()
         _ = flushPendingTranscriptSave()
@@ -3557,6 +3625,8 @@ final class TranslationSessionStore {
         _ service: MetaVoiceTranscribeService,
         configuration: StartConfiguration
     ) async throws {
+        studyMetaConnection += 1
+        studyCapture?.retractPartials()
         try await service.start(
             model: configuration.metaTranscriptionModel,
             sourceLanguage: configuration.sourceLanguage,
@@ -3568,38 +3638,48 @@ final class TranslationSessionStore {
         )
     }
 
-    private func flushOpenAITerminalTranscriptMailbox() {
-        openAITerminalTranscriptMailbox.drain().forEach { transcript in
-            guard transcript.transcriber === openAITranscriber,
-                  isRunning || isStarting
-            else {
-                return
+    private func flushOpenAITranscriptMailbox() {
+        for transcript in openAITranscriptMailbox.drain() where transcript.transcriber === openAITranscriber {
+            switch transcript.kind {
+            case .terminal(let itemID, let language, let confidence):
+                guard isRunning || isStarting else { continue }
+                studyCapture?.record(transcript.text, final: true, providerID: itemID, language: language.id)
+                guard !transcript.text.isEmpty else { continue }
+                enqueueRecognizedCaption(sourceText: transcript.text, recognizedLanguage: language, confidence: confidence)
+            case .study(let channel, let update):
+                guard let studyCapture, isRunning, !isPaused else { continue }
+                let language = channel == .translation ? targetLanguage.id
+                    : (isUsingOpenAIRealtimeTranslation ? nil : sourceLanguage.id)
+                switch update {
+                case .snapshot(let itemID, let final):
+                    studyCapture.recordOpenAIRealtimeSnapshot(transcript.text, final: final, providerID: itemID,
+                                                              channel: channel, language: language)
+                case .confirmedDelta(let milliseconds):
+                    studyCapture.appendConfirmed(transcript.text, channel: channel, language: language,
+                                                 audioMilliseconds: milliseconds)
+                }
             }
-            enqueueRecognizedCaption(
-                sourceText: transcript.text,
-                recognizedLanguage: transcript.language,
-                confidence: transcript.confidence
-            )
         }
     }
 
     private func configureOpenAITerminalTranscriptDelivery(
         for transcriber: OpenAIRealtimeTranscriber
     ) {
-        let terminalTranscriptMailbox = openAITerminalTranscriptMailbox
-        transcriber.onTerminalTranscriptReady = { [weak self, weak transcriber] text, language, confidence in
-            guard let transcriber else { return }
-            terminalTranscriptMailbox.append(
-                OpenAITerminalTranscript(
-                    text: text,
-                    language: language,
-                    confidence: confidence,
-                    transcriber: transcriber
-                )
-            )
+        let mailbox = openAITranscriptMailbox
+        let deliver: @Sendable (OpenAITranscriptDelivery) -> Void = { [weak self] transcript in
+            guard mailbox.append(transcript) else { return }
             Task { @MainActor [weak self] in
-                self?.flushOpenAITerminalTranscriptMailbox()
+                self?.flushOpenAITranscriptMailbox()
             }
+        }
+        transcriber.onTerminalTranscriptReady = { [weak transcriber] itemID, text, language, confidence in
+            guard let transcriber else { return }
+            deliver(.init(transcriber: transcriber, text: text,
+                          kind: .terminal(itemID: itemID, language: language, confidence: confidence)))
+        }
+        transcriber.onStudyTranscript = { [weak transcriber] text, channel, update in
+            guard let transcriber else { return }
+            deliver(.init(transcriber: transcriber, text: text, kind: .study(channel: channel, update: update)))
         }
     }
 
@@ -3746,11 +3826,13 @@ final class TranslationSessionStore {
     }
 
     private func configureQwenCallbacks(service: QwenRealtimeTranslationService, generation: UInt64) {
-        service.onSourceTranscript = { [weak self, weak service] text, isFinal in
-            await self?.receiveQwenText(text, isFinal: isFinal, isTranslation: false, service: service, generation: generation)
+        service.onSourceTranscript = { [weak self, weak service] text, isFinal, itemID in
+            await self?.receiveQwenText(text, isFinal: isFinal, isTranslation: false,
+                                       service: service, generation: generation, itemID: itemID)
         }
-        service.onTranslation = { [weak self, weak service] text, isFinal in
-            await self?.receiveQwenText(text, isFinal: isFinal, isTranslation: true, service: service, generation: generation)
+        service.onTranslation = { [weak self, weak service] text, isFinal, itemID in
+            await self?.receiveQwenText(text, isFinal: isFinal, isTranslation: true,
+                                       service: service, generation: generation, itemID: itemID)
         }
         service.onAudio = { [weak self, weak service] audio in
             await self?.receiveQwenAudio(audio, service: service, generation: generation)
@@ -3761,9 +3843,13 @@ final class TranslationSessionStore {
     }
 
     private func receiveQwenText(_ text: String, isFinal: Bool, isTranslation: Bool,
-                                 service: QwenRealtimeTranslationService?, generation: UInt64) {
+                                 service: QwenRealtimeTranslationService?, generation: UInt64, itemID: String? = nil) {
         guard let service, service === qwenTranslator, isUsingQwenTranslation, isRunning,
               pipelineLifecycle.acceptsSample(generation: generation) else { return }
+        studyCapture?.record(text, final: isFinal, providerID: itemID,
+                             channel: isTranslation ? .translation : .source,
+                             language: isTranslation ? targetLanguage.id : nil,
+                             delta: !isFinal && (isTranslation || qwenTranslationModel != .audio31RealtimePlus))
         // pause/stop 직전에 보낸 오디오의 마지막 응답도 보존한다.
         if isTranslation { qwenTranslationTranscript.receive(text, isFinal: isFinal) }
         else { qwenSourceTranscript.receive(text, isFinal: isFinal) }
@@ -5026,6 +5112,13 @@ final class TranslationSessionStore {
         let updatedSourceText: String
         if metadata != nil {
             updatedSourceText = sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let metadata {
+                let range = metadata.hasValidAudioRange && metadata.audioStartSeconds >= 0
+                    && metadata.audioEndSeconds >= metadata.audioStartSeconds
+                    ? metadata.audioStartSeconds...metadata.audioEndSeconds : nil
+                studyCapture?.record(updatedSourceText, final: metadata.isFinal, providerID: metadata.segmentID,
+                                     language: direction.source.id, audioRange: range)
+            }
             prepareAppleSpeechSegmentForAuthoritativeUpdate(
                 sourceText: updatedSourceText,
                 language: direction.source,
@@ -6754,6 +6847,8 @@ final class TranslationSessionStore {
     private func updateMetaPartialTranscript(_ text: String) {
         guard isRunning, !isPaused, isUsingMetaScribe, let turnId = metaActiveTurnID else { return }
         let sourceText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        studyCapture?.record(sourceText, final: false, providerID: "meta:\(studyMetaConnection):\(turnId)",
+                             language: sourceLanguage.id)
         guard !sourceText.isEmpty else { return }
 
         lastRecognizedText = sourceText
@@ -6839,6 +6934,7 @@ final class TranslationSessionStore {
             nariTurnLineIDs.removeValue(forKey: oldest)
         }
         if text.isEmpty {
+            studyCapture?.record(text, final: update.isFinal, providerID: update.itemID, language: detectedLanguage?.id)
             if let index = existingIndex {
                 let removed = lines.remove(at: index)
                 sourceLanguageByLineID.removeValue(forKey: removed.id)
@@ -6856,6 +6952,8 @@ final class TranslationSessionStore {
         )
         if let index = existingIndex { lines[index] = line } else { lines.append(line) }
         nariTurnLineIDs[update.itemID] = line.id
+        studyCapture?.record(text, final: update.isFinal, providerID: update.itemID,
+                             language: unknownDetectedLanguage ? nil : language.id, captionID: line.id)
         sourceLanguageByLineID[line.id] = language
         lastRecognizedText = text
         lastRecognizedWasFinal = update.isFinal
@@ -6894,6 +6992,7 @@ final class TranslationSessionStore {
             grokTurnLineIDs.removeValue(forKey: oldest)
         }
         if text.isEmpty {
+            studyCapture?.record(text, final: update.isFinal, providerID: update.itemID, language: detectedLanguage?.id)
             if let index = existingIndex {
                 let removed = lines.remove(at: index)
                 sourceLanguageByLineID.removeValue(forKey: removed.id)
@@ -6911,6 +7010,8 @@ final class TranslationSessionStore {
         )
         if let index = existingIndex { lines[index] = line } else { lines.append(line) }
         grokTurnLineIDs[update.itemID] = line.id
+        studyCapture?.record(text, final: update.isFinal, providerID: update.itemID,
+                             language: unknownDetectedLanguage ? nil : language.id, captionID: line.id)
         sourceLanguageByLineID[line.id] = isGrokSourceAutoDetectionEnabled ? detectedLanguage : language
         lastRecognizedText = text
         lastRecognizedWasFinal = update.isFinal
@@ -6936,6 +7037,7 @@ final class TranslationSessionStore {
         if let index = lines.firstIndex(where: { $0.id == line.id }) { lines[index] = line }
         else if !text.isEmpty { lines.append(line) }
         azurePartialLineID = line.id
+        studyCapture?.record(text, final: false, language: sourceLanguage.id, captionID: line.id)
         presentFloatingSourceText(text, identity: floatingIdentity(for: line.id))
     }
 
@@ -6950,6 +7052,7 @@ final class TranslationSessionStore {
             finishPipeline(statusOverride: error.localizedDescription)
         case .success(let text):
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                studyCapture?.record("", final: true)
                 if let id = azurePartialLineID { lines.removeAll { $0.id == id }; sourceLanguageByLineID.removeValue(forKey: id) }
                 azurePartialLineID = nil
                 rehydrateFloatingCaptionDisplayFromCurrentLine()
@@ -6962,6 +7065,7 @@ final class TranslationSessionStore {
             if let index = lines.firstIndex(where: { $0.id == line.id }) { lines[index] = line }
             else { lines.append(line) }
             azurePartialLineID = nil
+            studyCapture?.record(text, final: true, language: sourceLanguage.id, captionID: line.id)
             sourceLanguageByLineID[line.id] = sourceLanguage
             lastRecognizedText = text
             lastRecognizedWasFinal = true
@@ -6976,7 +7080,11 @@ final class TranslationSessionStore {
     private func completeMetaTurn(_ turnId: Int32, transcript: String) {
         guard isRunning, !isPaused, isUsingMetaScribe else { return }
         let sourceText = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !sourceText.isEmpty else { return }
+        let studyID = "meta:\(studyMetaConnection):\(turnId)"
+        guard !sourceText.isEmpty else {
+            studyCapture?.record("", final: true, providerID: studyID)
+            return
+        }
         let speakerLabel = metaTurnSpeakerLabels[turnId]
         let line: CaptionLine
         if let lineID = metaTurnLineIDs[turnId],
@@ -7012,6 +7120,8 @@ final class TranslationSessionStore {
         lastRecognitionAt = Date()
         presentFloatingSourceText(sourceText, identity: floatingIdentity(for: line.id))
 
+        studyCapture?.record(sourceText, final: true, providerID: studyID,
+                             language: sourceLanguage.id, captionID: line.id)
         let savedTurn = speakerLabel.map { "\($0): \(sourceText)" } ?? sourceText
         metaSavedTranscriptText = metaSavedTranscriptText.isEmpty
             ? savedTurn
@@ -7747,6 +7857,11 @@ final class TranslationSessionStore {
         )
         if finalizesRequest, pendingTranslationSourceText == sourceText {
             pendingTranslationSourceText = ""
+        }
+        if finalizesRequest {
+            studyCapture?.translate(organizedTranslatedText, matching: sourceText,
+                                    language: request?.target.id ?? targetLanguage.id, captionID: line.id,
+                                    providerID: appleIdentity?.segmentID)
         }
         if lines[index].translatedText == organizedTranslatedText,
            lines[index].translatedSourceText == sourceText {
@@ -8596,12 +8711,15 @@ extension TranslationSessionStore: GeminiLiveTranslationServiceDelegate {
     nonisolated func geminiLiveTranslationService(
         _ service: GeminiLiveTranslationService,
         didReceiveInputTranscript text: String,
-        languageCode _: String?,
+        languageCode: String?,
         isFinal: Bool
     ) {
         Task { @MainActor in
             guard activeGeneration(for: service, requiresRunning: true) != nil else {
                 return
+            }
+            if !isPaused {
+                studyCapture?.record(text, final: isFinal, language: languageCode)
             }
             if isUsingGeminiTranscriptionMode {
                 updateGeminiLiveTranscription(text, isFinal: isFinal)
@@ -8614,13 +8732,28 @@ extension TranslationSessionStore: GeminiLiveTranslationServiceDelegate {
     nonisolated func geminiLiveTranslationService(
         _ service: GeminiLiveTranslationService,
         didReceiveOutputTranscript text: String,
-        languageCode _: String?
+        languageCode: String?
     ) {
         Task { @MainActor in
             guard activeGeneration(for: service, requiresRunning: true) != nil else {
                 return
             }
+            if !isPaused, isUsingGeminiTranslation {
+                studyCapture?.record(text, final: false, channel: .translation,
+                                     language: languageCode ?? targetLanguage.id, delta: true)
+            }
             updateGeminiLiveOutputTranscript(text)
+        }
+    }
+
+    nonisolated func geminiLiveTranslationService(_ service: GeminiLiveTranslationService, didFinishOutput interrupted: Bool) {
+        Task { @MainActor in
+            guard activeGeneration(for: service, requiresRunning: true) != nil, isUsingGeminiTranslation else { return }
+            if interrupted {
+                studyCapture?.record("", final: true, channel: .translation)
+            } else {
+                studyCapture?.finishTurn(channel: .translation, language: targetLanguage.id)
+            }
         }
     }
 

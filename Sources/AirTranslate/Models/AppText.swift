@@ -1450,6 +1450,8 @@ enum AppText {
             localized(english: "French", korean: "프랑스어", japanese: "フランス語", chineseSimplified: "法语")
         case "de-DE":
             localized(english: "German", korean: "독일어", japanese: "ドイツ語", chineseSimplified: "德语")
+        case "ru-RU":
+            localized(english: "Russian", korean: "러시아어", japanese: "ロシア語", chineseSimplified: "俄语")
         default:
             fallback
         }
