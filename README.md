@@ -10,6 +10,8 @@
 
 Live Mac audio captions and translation for meetings, videos, lectures, interviews, and streams.
 
+**Study Edition** is in preparation. [Статус, сборка и план Study Edition](docs/STUDY-EDITION.md).
+
 <p align="center">
   <a href="https://github.com/himomohi/AirTranslate/releases/latest/download/AirTranslate.dmg"><img alt="Download AirTranslate.dmg" src="https://img.shields.io/badge/Download-AirTranslate.dmg-2EA44F?style=for-the-badge&logo=apple&logoColor=white"></a>
   <a href="https://github.com/himomohi/AirTranslate/releases/latest"><img alt="Latest public release" src="https://img.shields.io/github/v/release/himomohi/AirTranslate?style=for-the-badge&label=Latest"></a>

@@ -26,6 +26,7 @@ Release/product/
 # Local contributor notes
 devlog/
 AGENTS.md
+!/AGENTS.md
 AGENTS.override.md
 프로젝트하네스.md
 하네스성숙도기록.md
