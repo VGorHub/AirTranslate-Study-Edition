@@ -169,7 +169,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     .tint(AirTranslateDesign.Palette.accent)
                     .labelsHidden()
-                    .frame(minWidth: 230, idealWidth: 300, maxWidth: .infinity)
+                    .fixedSize(horizontal: true, vertical: false)
                     .allowsHitTesting(segmentedControlAllowsHitTesting())
                     .accessibilityRespondsToUserInteraction(segmentedControlAllowsHitTesting())
                     .opacity(isSessionConfigurationLocked ? 0.6 : 1)
@@ -333,7 +333,7 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
                 .tint(AirTranslateDesign.Palette.accent)
                 .labelsHidden()
-                .frame(width: 190)
+                .fixedSize(horizontal: true, vertical: false)
                 .allowsHitTesting(segmentedControlAllowsHitTesting())
                 .accessibilityRespondsToUserInteraction(segmentedControlAllowsHitTesting())
                 .opacity(isSessionConfigurationLocked ? 0.6 : 1)
@@ -393,7 +393,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     .tint(AirTranslateDesign.Palette.accent)
                     .labelsHidden()
-                    .frame(width: 170)
+                    .fixedSize(horizontal: true, vertical: false)
                     .allowsHitTesting(
                         segmentedControlAllowsHitTesting(
                             isOtherwiseAvailable: !session.isUsingProviderRealtimeTranslation
@@ -562,7 +562,7 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
                 .tint(AirTranslateDesign.Palette.accent)
                 .labelsHidden()
-                .frame(width: 190)
+                .fixedSize(horizontal: true, vertical: false)
                 .allowsHitTesting(segmentedControlAllowsHitTesting())
                 .accessibilityRespondsToUserInteraction(segmentedControlAllowsHitTesting())
                 .opacity(isSessionConfigurationLocked ? 0.6 : 1)

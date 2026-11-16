@@ -5,7 +5,7 @@ struct SidebarView: View {
     @Bindable var session: TranslationSessionStore
 
     var body: some View {
-        ConsoleBarView(session: session, isCompact: false)
+        ConsoleBarView(session: session)
     }
 }
 
@@ -159,12 +159,35 @@ struct StageHeaderView: View {
 
 struct ConsoleBarView: View {
     @Bindable var session: TranslationSessionStore
-    let isCompact: Bool
     @Environment(\.openSettings) private var openSettings
     @State private var showsVolume = false
     @FocusState private var isCaptureFocused: Bool
 
     var body: some View {
+        ViewThatFits(in: .horizontal) {
+            consoleRow(isCompact: false)
+            consoleRow(isCompact: true)
+        }
+        .frame(maxWidth: 1280)
+        .airConsoleSurface()
+        .onAppear {
+            Task { @MainActor in
+                await Task.yield()
+                isCaptureFocused = true
+            }
+            session.refreshModelAvailability()
+            guard isConfigurationAvailable else { return }
+            session.refreshMicrophoneInputDevices()
+            if usesOpenAIAutoLanguageFlow {
+                session.usePreferredLanguageForOpenAIOutput()
+            }
+        }
+        .popover(isPresented: $showsVolume, arrowEdge: .bottom) {
+            volumePopover
+        }
+    }
+
+    private func consoleRow(isCompact: Bool) -> some View {
         HStack(spacing: AirTranslateDesign.Spacing.sm) {
             captureButton
             pauseButton
@@ -193,23 +216,6 @@ struct ConsoleBarView: View {
         }
         .padding(.horizontal, AirTranslateDesign.Spacing.sm)
         .padding(.vertical, AirTranslateDesign.Spacing.xs)
-        .frame(maxWidth: 1120)
-        .airConsoleSurface()
-        .onAppear {
-            Task { @MainActor in
-                await Task.yield()
-                isCaptureFocused = true
-            }
-            session.refreshModelAvailability()
-            guard isConfigurationAvailable else { return }
-            session.refreshMicrophoneInputDevices()
-            if usesOpenAIAutoLanguageFlow {
-                session.usePreferredLanguageForOpenAIOutput()
-            }
-        }
-        .popover(isPresented: $showsVolume, arrowEdge: .bottom) {
-            volumePopover
-        }
     }
 
     private var captureButton: some View {
@@ -283,7 +289,7 @@ struct ConsoleBarView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 168)
+            .fixedSize(horizontal: true, vertical: false)
             .allowsHitTesting(isConfigurationAvailable)
             .accessibilityRespondsToUserInteraction(isConfigurationAvailable)
             .accessibilityLabel(AppText.audioInputSource)
@@ -440,7 +446,7 @@ struct ConsoleBarView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 150)
+            .fixedSize(horizontal: true, vertical: false)
             .allowsHitTesting(isConfigurationAvailable)
             .accessibilityRespondsToUserInteraction(isConfigurationAvailable)
             .accessibilityLabel(AppText.outputMode)
