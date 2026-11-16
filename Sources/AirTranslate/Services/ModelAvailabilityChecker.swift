@@ -91,45 +91,25 @@ enum ModelAvailabilityChecker {
     }
 
     private static func speechAvailability(for language: LanguageOption) async -> ModelAvailability {
-        guard SpeechTranscriber.isAvailable else {
-            return ModelAvailability(
-                state: .unavailable,
-                detail: AppText.speechModelAvailabilityDetail(
-                    source: language.localizedTitle,
-                    status: ModelAvailabilityState.unavailable.title
-                )
-            )
+        let state: ModelAvailabilityState
+        if let (_, transcriber) = await LiveSpeechTranscriber.makeModule(for: language) {
+            state = await availabilityState(for: AssetInventory.status(forModules: [transcriber]))
+        } else {
+            state = SpeechTranscriber.isAvailable ? .unsupported : .unavailable
         }
-
-        guard let supportedLocale = await SpeechTranscriber.supportedLocale(equivalentTo: language.locale) else {
-            return ModelAvailability(
-                state: .unsupported,
-                detail: AppText.speechModelAvailabilityDetail(
-                    source: language.localizedTitle,
-                    status: ModelAvailabilityState.unsupported.title
-                )
-            )
-        }
-
-        let transcriber = SpeechTranscriber(locale: supportedLocale, preset: .progressiveTranscription)
-        let status = await AssetInventory.status(forModules: [transcriber])
 
         return ModelAvailability(
-            state: availabilityState(for: status),
+            state: state,
             detail: AppText.speechModelAvailabilityDetail(
                 source: language.localizedTitle,
-                status: availabilityState(for: status).title
+                status: state.title
             )
         )
     }
 
     private static func downloadSpeechAssets(for language: LanguageOption) async throws {
-        guard let supportedLocale = await SpeechTranscriber.supportedLocale(equivalentTo: language.locale) else {
-            return
-        }
-
-        let transcriber = SpeechTranscriber(locale: supportedLocale, preset: .progressiveTranscription)
-        guard let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) else {
+        guard let (_, transcriber) = await LiveSpeechTranscriber.makeModule(for: language),
+              let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) else {
             return
         }
 

@@ -3398,7 +3398,11 @@ final class TranslationSessionStore {
 
             let languages = await appleSpeechLanguages(for: configuration)
             try Task.checkCancellation()
-            try await candidate.start(languages: languages, includesAlternatives: configuration.usesJevSelection && !configuration.isTranscribeOnlyMode)
+            try await candidate.start(
+                languages: languages,
+                includesAlternatives: configuration.usesJevSelection && !configuration.isTranscribeOnlyMode,
+                allowsRussianDictation: !configuration.usesAppleSourceAutoDetection
+            )
             try validatePipelineStart(generation: generation, configuration: configuration)
 
             stopCaptioners()

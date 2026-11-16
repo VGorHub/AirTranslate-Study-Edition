@@ -2,6 +2,18 @@ import AVFoundation
 import CoreMedia
 import Speech
 
+protocol AppleSpeechTextResult: SpeechModuleResult {
+    var text: AttributedString { get }
+    var alternatives: [AttributedString] { get }
+}
+
+protocol AppleSpeechTranscriptionModule: LocaleDependentSpeechModule where Result: AppleSpeechTextResult {}
+
+extension SpeechTranscriber.Result: AppleSpeechTextResult {}
+extension DictationTranscriber.Result: AppleSpeechTextResult {}
+extension SpeechTranscriber: AppleSpeechTranscriptionModule {}
+extension DictationTranscriber: AppleSpeechTranscriptionModule {}
+
 enum LiveSpeechTranscriberError: LocalizedError, Equatable, Sendable {
     case audioInputBackpressure(bufferLimit: Int)
     case audioInputConversionFailed
@@ -410,6 +422,32 @@ final class LiveSpeechTranscriber: @unchecked Sendable {
         self.assetReservationCoordinator = assetReservationCoordinator
     }
 
+    static func makeModule(
+        for language: LanguageOption,
+        includesAlternatives: Bool = false,
+        allowsRussianDictation: Bool = true
+    ) async -> (locale: Locale, transcriber: any AppleSpeechTranscriptionModule)? {
+        if SpeechTranscriber.isAvailable,
+           let locale = await SpeechTranscriber.supportedLocale(equivalentTo: language.locale) {
+            let transcriber = SpeechTranscriber(
+                locale: locale,
+                transcriptionOptions: [],
+                reportingOptions: includesAlternatives ? [.volatileResults, .alternativeTranscriptions] : [.volatileResults],
+                attributeOptions: [.transcriptionConfidence]
+            )
+            return (locale, transcriber)
+        }
+
+        guard allowsRussianDictation, language.id == LanguageOption.russian.id,
+              let locale = await DictationTranscriber.supportedLocale(equivalentTo: language.locale) else { return nil }
+        var preset = DictationTranscriber.Preset.progressiveLongDictation
+        // Commit dictated phrases during capture so Study can persist them before Stop.
+        preset.reportingOptions.insert(.frequentFinalization)
+        preset.attributeOptions.insert(.transcriptionConfidence)
+        if includesAlternatives { preset.reportingOptions.insert(.alternativeTranscriptions) }
+        return (locale, DictationTranscriber(locale: locale, preset: preset))
+    }
+
     static func installedSupportedLanguages(from languages: [LanguageOption]) async -> [LanguageOption] {
         guard SpeechTranscriber.isAvailable else { return [] }
 
@@ -435,7 +473,11 @@ final class LiveSpeechTranscriber: @unchecked Sendable {
         return installedLanguages
     }
 
-    func start(languages: [LanguageOption], includesAlternatives: Bool = false) async throws {
+    func start(
+        languages: [LanguageOption],
+        includesAlternatives: Bool = false,
+        allowsRussianDictation: Bool = true
+    ) async throws {
         let lifecycleTransition = takeLifecycleTransition()
         let lifecycleGeneration = lifecycleTransition.generation
         await lifecycleTransition.cleanupTask.value
@@ -455,10 +497,15 @@ final class LiveSpeechTranscriber: @unchecked Sendable {
             let uniqueLanguages = languages.filter { language in
                 seenLanguageIDs.insert(language.id).inserted
             }
-            var transcribers: [(language: LanguageOption, transcriber: SpeechTranscriber)] = []
+            var transcribers: [(language: LanguageOption, transcriber: any AppleSpeechTranscriptionModule)] = []
             for language in uniqueLanguages {
                 try Task.checkCancellation()
-                guard let supportedLocale = await SpeechTranscriber.supportedLocale(equivalentTo: language.locale) else {
+                // The existing multi-language auto-detection pass compares SpeechTranscriber results.
+                guard let (supportedLocale, transcriber) = await Self.makeModule(
+                    for: language,
+                    includesAlternatives: includesAlternatives,
+                    allowsRussianDictation: allowsRussianDictation && uniqueLanguages.count == 1
+                ) else {
                     throw SpeechError.recognizerUnavailable
                 }
                 try Task.checkCancellation()
@@ -473,17 +520,7 @@ final class LiveSpeechTranscriber: @unchecked Sendable {
                     )
                 }
                 try Task.checkCancellation()
-                transcribers.append((
-                    language: language,
-                    transcriber: SpeechTranscriber(
-                        locale: supportedLocale,
-                        transcriptionOptions: [],
-                        // 문맥 창을 줄이는 fastResults 대신 기본 정확도를 유지하고 중간 결과만 받는다.
-                        reportingOptions: includesAlternatives
-                            ? [.volatileResults, .alternativeTranscriptions] : [.volatileResults],
-                        attributeOptions: [.transcriptionConfidence]
-                    )
-                ))
+                transcribers.append((language, transcriber))
             }
             let modules: [any SpeechModule] = transcribers.map(\.transcriber)
             let inputQueue: SpeechAnalyzerInputQueue<AnalyzerInput> = makeInputQueue(
@@ -548,10 +585,10 @@ final class LiveSpeechTranscriber: @unchecked Sendable {
                         await producerStartGate.wait()
                         guard !Task.isCancelled else { return }
                         do {
-                            for try await result in entry.transcriber.results {
+                            try await Self.forEachResult(of: entry.transcriber) { result in
                                 let text = String(result.text.characters)
                                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !text.isEmpty else { continue }
+                                guard !text.isEmpty else { return }
                                 if PipelineDiagnostics.isEnabled {
                                     PipelineDiagnostics.record("speech.result", values: [
                                         "characters": Double(text.count),
@@ -977,6 +1014,15 @@ final class LiveSpeechTranscriber: @unchecked Sendable {
         }
     }
 #endif
+
+    private static func forEachResult(
+        of transcriber: some AppleSpeechTranscriptionModule,
+        _ receive: (any AppleSpeechTextResult) -> Void
+    ) async throws {
+        for try await result in transcriber.results {
+            receive(result)
+        }
+    }
 
     private static func averageConfidence(in text: AttributedString) -> Double {
         var total = 0.0
