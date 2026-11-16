@@ -10,7 +10,7 @@
 
 Live Mac audio captions and translation for meetings, videos, lectures, interviews, and streams.
 
-**Study Edition** adds Russian as a translation language and records sessions for its local API. [Сборка и план Study Edition](docs/STUDY-EDITION.md) · [Локальный API](docs/STUDY-API.md)
+**Study Edition** adds Russian translation and a browser transcript with live captions, searchable session history, and selectable text for Yomitan. Click the globe in AirTranslate to open the transcript. [Сборка и проверка Study Edition](docs/STUDY-EDITION.md) · [Локальный API](docs/STUDY-API.md)
 
 <p align="center">
   <a href="https://github.com/himomohi/AirTranslate/releases/latest/download/AirTranslate.dmg"><img alt="Download AirTranslate.dmg" src="https://img.shields.io/badge/Download-AirTranslate.dmg-2EA44F?style=for-the-badge&logo=apple&logoColor=white"></a>

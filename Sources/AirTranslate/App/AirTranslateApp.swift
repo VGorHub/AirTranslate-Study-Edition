@@ -110,9 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.studyBackend = backend
         session.studyCapture = StudyCapture(backend: backend)
 
-        let configuredPort = environment["AIRTRANSLATE_STUDY_PORT"].flatMap(Int.init)
-            ?? UserDefaults.standard.integer(forKey: "StudyPort")
-        let port = (1...65535).contains(configuredPort) ? configuredPort : 8765
+        let port = StudyHTTPServer.configuredPort
         let server = StudyHTTPServer(port: port, backend: backend) { [weak session] action in
             session?.handleStudyCaptureAction(action) ?? false
         }

@@ -63,3 +63,6 @@ tmp/
 
 # Python bytecode
 __pycache__/
+
+# Study web dependencies
+/Web/node_modules/

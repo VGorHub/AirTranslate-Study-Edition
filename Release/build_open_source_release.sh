@@ -85,6 +85,7 @@ fi
 install -m 644 "$ROOT_DIR/Resources/AppIcon.icns" "$APP_RESOURCES/AppIcon.icns"
 install -m 644 "$ROOT_DIR/LICENSE" "$APP_RESOURCES/LICENSE"
 install -m 644 "$ROOT_DIR/NOTICE" "$APP_RESOURCES/NOTICE"
+bash "$SCRIPT_DIR/build_study_web.sh" "$APP_RESOURCES/StudyWeb"
 
 "$SCRIPT_DIR/write_info_plist.sh" "$INFO_PLIST" release
 

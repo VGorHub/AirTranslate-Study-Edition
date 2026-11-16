@@ -952,6 +952,12 @@ enum AppText {
         english: "Open Library",
         korean: "저장소 열기"
     )
+    static let openStudyWeb = localized(
+        english: "Open Study Transcript in Browser",
+        korean: "브라우저에서 학습 기록 열기",
+        japanese: "ブラウザで学習用の文字起こしを開く",
+        chineseSimplified: "在浏览器中打开学习转写"
+    )
     static let manageSavedTranscripts = localized(
         english: "Manage Saved Transcripts",
         korean: "저장된 기록 관리",

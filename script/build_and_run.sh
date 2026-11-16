@@ -45,6 +45,7 @@ mkdir -p "$APP_RESOURCES"
 cp "$BUILD_BINARY" "$APP_BINARY"
 chmod +x "$APP_BINARY"
 cp "$ROOT_DIR/Resources/AppIcon.icns" "$APP_RESOURCES/AppIcon.icns"
+bash "$SCRIPT_DIR/build_study_web.sh" "$APP_RESOURCES/StudyWeb"
 
 "$SCRIPT_DIR/write_info_plist.sh" "$INFO_PLIST" local
 

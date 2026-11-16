@@ -4,6 +4,12 @@ import Hummingbird
 struct StudyHTTPServer: Sendable {
     enum CaptureAction: String, Sendable { case start, stop, pause, resume }
 
+    static var configuredPort: Int {
+        let configured = ProcessInfo.processInfo.environment["AIRTRANSLATE_STUDY_PORT"].flatMap(Int.init)
+            ?? UserDefaults.standard.integer(forKey: "StudyPort")
+        return (1...65535).contains(configured) ? configured : 8765
+    }
+
     let port: Int
     let backend: StudyBackend
     let control: @MainActor @Sendable (CaptureAction) -> Bool
@@ -12,6 +18,12 @@ struct StudyHTTPServer: Sendable {
     func run() async throws {
         let router = Router()
         router.middlewares.add(StudyHTTPAccess(authority: "127.0.0.1:\(port)"))
+        let web = StudyWebResources(directory: Bundle.main.resourceURL?.appending(path: "StudyWeb"))
+        router.get("/") { _, _ in web.index() }
+        router.get("assets/:name") { _, context in
+            guard let name = context.parameters.get("name") else { throw HTTPError(.notFound) }
+            return try web.asset(String(name))
+        }
         let api = router.group("/api/v1")
 
         api.get("status") { _, _ in
@@ -100,23 +112,64 @@ struct StudyHTTPServer: Sendable {
     }
 }
 
+private struct StudyWebResources: Sendable {
+    let directory: URL?
+
+    func index() -> Response {
+        guard let directory,
+              let data = try? Data(contentsOf: directory.appending(path: "index.html")) else {
+            return Response(status: .serviceUnavailable, headers: [.contentType: "text/plain; charset=utf-8"],
+                            body: .init(byteBuffer: ByteBuffer(string: "Build AirTranslate with script/build_and_run.sh to include Study Web.")))
+        }
+        // Yomitan loads its dictionary popup as an iframe from the Chrome Web Store extension.
+        let policy = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; frame-src chrome-extension://likgccmbimhjbgkjambclfkhldnlhbnn/popup.html"
+        return Response(status: .ok, headers: [.contentType: "text/html; charset=utf-8", .contentSecurityPolicy: policy],
+                        body: .init(byteBuffer: ByteBuffer(bytes: data)))
+    }
+
+    func asset(_ name: String) throws -> Response {
+        guard let directory, !name.hasPrefix("."),
+              name.utf8.allSatisfy({ (45...46).contains($0) || (48...57).contains($0) ||
+                  (65...90).contains($0) || $0 == 95 || (97...122).contains($0) }) else { throw HTTPError(.notFound) }
+        let file = directory.appending(path: "assets", directoryHint: .isDirectory).appending(path: name)
+        let type: String
+        switch file.pathExtension {
+        case "js": type = "text/javascript; charset=utf-8"
+        case "css": type = "text/css; charset=utf-8"
+        case "woff2": type = "font/woff2"
+        case "woff": type = "font/woff"
+        default: throw HTTPError(.notFound)
+        }
+        guard let values = try? file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]),
+              values.isRegularFile == true, values.isSymbolicLink == false,
+              let data = try? Data(contentsOf: file) else { throw HTTPError(.notFound) }
+        return Response(status: .ok, headers: [.contentType: type], body: .init(byteBuffer: ByteBuffer(bytes: data)))
+    }
+}
+
 private struct StudyHTTPAccess: RouterMiddleware {
     static let controlToken = HTTPFields.Element.Name("X-AirTranslate-Token")!
     static let lastEventID = HTTPFields.Element.Name("Last-Event-ID")!
     private static let fetchSite = HTTPFields.Element.Name("Sec-Fetch-Site")!
+    private static let fetchMode = HTTPFields.Element.Name("Sec-Fetch-Mode")!
+    private static let fetchDestination = HTTPFields.Element.Name("Sec-Fetch-Dest")!
     let authority: String
 
     func handle(_ request: Request, context: BasicRequestContext,
                 next: (Request, BasicRequestContext) async throws -> Response) async throws -> Response {
-        // Exact authority and origin checks also block DNS rebinding and requests from different loopback ports.
+        // A link from another site can open the landing page in its own tab. API and asset requests remain same-origin.
+        let openingWeb = request.method == .get && request.uri.path == "/" &&
+            request.headers[Self.fetchMode] == "navigate" && request.headers[Self.fetchDestination] == "document"
         guard request.head.authority == authority,
               request.headers[.origin].map({ $0 == "http://\(authority)" }) ?? true,
-              request.headers[Self.fetchSite].map({ $0 == "same-origin" || $0 == "none" }) ?? true else {
+              openingWeb || (request.headers[Self.fetchSite].map({ $0 == "same-origin" || $0 == "none" }) ?? true) else {
             return Response(status: .forbidden)
         }
         var response = try await next(request, context)
         response.headers[.cacheControl] = "no-store"
-        response.headers[.contentSecurityPolicy] = "default-src 'none'; frame-ancestors 'none'"
+        if response.headers[.contentSecurityPolicy] == nil {
+            response.headers[.contentSecurityPolicy] = "default-src 'none'; frame-ancestors 'none'"
+        }
         response.headers[.xContentTypeOptions] = "nosniff"
         return response
     }

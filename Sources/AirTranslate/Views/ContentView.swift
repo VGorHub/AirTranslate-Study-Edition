@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openURL) private var openURL
     @State private var isLibraryPresented = false
     @State private var isFloatingCaptionVisible = FloatingCaptionWindowController.isOpen
     @State private var isMainCaptionVisible = false
@@ -56,6 +57,16 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    if let url = URL(string: "http://127.0.0.1:\(StudyHTTPServer.configuredPort)/") {
+                        openURL(url)
+                    }
+                } label: {
+                    Image(systemName: "globe")
+                }
+                .help(AppText.openStudyWeb)
+                .accessibilityLabel(AppText.openStudyWeb)
+
                 Button {
                     isLibraryPresented = true
                 } label: {

@@ -1,0 +1,596 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T17:59:14Z",
+  "title": "Design System: AirTranslate Study Edition Web",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Бирюзовый акцент (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0802 207.6)",
+          "oklch(26% 0.0802 207.6)",
+          "oklch(38% 0.0802 207.6)",
+          "oklch(49% 0.0802 207.6)",
+          "oklch(61% 0.0802 207.6)",
+          "oklch(72% 0.0802 207.6)",
+          "oklch(84% 0.0802 207.6)",
+          "oklch(95% 0.0802 207.6)"
+        ]
+      },
+      "primary-dark": {
+        "role": "primary",
+        "displayName": "Бирюзовый акцент (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.1147 204.4)",
+          "oklch(26% 0.1147 204.4)",
+          "oklch(38% 0.1147 204.4)",
+          "oklch(49% 0.1147 204.4)",
+          "oklch(61% 0.1147 204.4)",
+          "oklch(72% 0.1147 204.4)",
+          "oklch(84% 0.1147 204.4)",
+          "oklch(95% 0.1147 204.4)"
+        ]
+      },
+      "primary-foreground": {
+        "role": "primary",
+        "displayName": "Текст на бирюзе (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0000 0.0)",
+          "oklch(26% 0.0000 0.0)",
+          "oklch(38% 0.0000 0.0)",
+          "oklch(49% 0.0000 0.0)",
+          "oklch(61% 0.0000 0.0)",
+          "oklch(72% 0.0000 0.0)",
+          "oklch(84% 0.0000 0.0)",
+          "oklch(95% 0.0000 0.0)"
+        ]
+      },
+      "primary-foreground-dark": {
+        "role": "primary",
+        "displayName": "Текст на бирюзе (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0305 210.0)",
+          "oklch(26% 0.0305 210.0)",
+          "oklch(38% 0.0305 210.0)",
+          "oklch(49% 0.0305 210.0)",
+          "oklch(61% 0.0305 210.0)",
+          "oklch(72% 0.0305 210.0)",
+          "oklch(84% 0.0305 210.0)",
+          "oklch(95% 0.0305 210.0)"
+        ]
+      },
+      "secondary": {
+        "role": "primary",
+        "displayName": "Мягкая бирюзовая подложка (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0180 201.1)",
+          "oklch(26% 0.0180 201.1)",
+          "oklch(38% 0.0180 201.1)",
+          "oklch(49% 0.0180 201.1)",
+          "oklch(61% 0.0180 201.1)",
+          "oklch(72% 0.0180 201.1)",
+          "oklch(84% 0.0180 201.1)",
+          "oklch(95% 0.0180 201.1)"
+        ]
+      },
+      "secondary-dark": {
+        "role": "primary",
+        "displayName": "Мягкая бирюзовая подложка (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0403 208.1)",
+          "oklch(26% 0.0403 208.1)",
+          "oklch(38% 0.0403 208.1)",
+          "oklch(49% 0.0403 208.1)",
+          "oklch(61% 0.0403 208.1)",
+          "oklch(72% 0.0403 208.1)",
+          "oklch(84% 0.0403 208.1)",
+          "oklch(95% 0.0403 208.1)"
+        ]
+      },
+      "secondary-foreground": {
+        "role": "primary",
+        "displayName": "Текст на мягкой бирюзовой подложке (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0663 209.5)",
+          "oklch(26% 0.0663 209.5)",
+          "oklch(38% 0.0663 209.5)",
+          "oklch(49% 0.0663 209.5)",
+          "oklch(61% 0.0663 209.5)",
+          "oklch(72% 0.0663 209.5)",
+          "oklch(84% 0.0663 209.5)",
+          "oklch(95% 0.0663 209.5)"
+        ]
+      },
+      "secondary-foreground-dark": {
+        "role": "primary",
+        "displayName": "Текст на мягкой бирюзовой подложке (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0803 201.7)",
+          "oklch(26% 0.0803 201.7)",
+          "oklch(38% 0.0803 201.7)",
+          "oklch(49% 0.0803 201.7)",
+          "oklch(61% 0.0803 201.7)",
+          "oklch(72% 0.0803 201.7)",
+          "oklch(84% 0.0803 201.7)",
+          "oklch(95% 0.0803 201.7)"
+        ]
+      },
+      "ring": {
+        "role": "primary",
+        "displayName": "Фокус (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0884 209.3)",
+          "oklch(26% 0.0884 209.3)",
+          "oklch(38% 0.0884 209.3)",
+          "oklch(49% 0.0884 209.3)",
+          "oklch(61% 0.0884 209.3)",
+          "oklch(72% 0.0884 209.3)",
+          "oklch(84% 0.0884 209.3)",
+          "oklch(95% 0.0884 209.3)"
+        ]
+      },
+      "ring-dark": {
+        "role": "primary",
+        "displayName": "Фокус (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.1147 204.4)",
+          "oklch(26% 0.1147 204.4)",
+          "oklch(38% 0.1147 204.4)",
+          "oklch(49% 0.1147 204.4)",
+          "oklch(61% 0.1147 204.4)",
+          "oklch(72% 0.1147 204.4)",
+          "oklch(84% 0.1147 204.4)",
+          "oklch(95% 0.1147 204.4)"
+        ]
+      },
+      "select": {
+        "role": "primary",
+        "displayName": "Выделенный текст (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0389 204.5)",
+          "oklch(26% 0.0389 204.5)",
+          "oklch(38% 0.0389 204.5)",
+          "oklch(49% 0.0389 204.5)",
+          "oklch(61% 0.0389 204.5)",
+          "oklch(72% 0.0389 204.5)",
+          "oklch(84% 0.0389 204.5)",
+          "oklch(95% 0.0389 204.5)"
+        ]
+      },
+      "select-dark": {
+        "role": "primary",
+        "displayName": "Выделенный текст (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0549 209.3)",
+          "oklch(26% 0.0549 209.3)",
+          "oklch(38% 0.0549 209.3)",
+          "oklch(49% 0.0549 209.3)",
+          "oklch(61% 0.0549 209.3)",
+          "oklch(72% 0.0549 209.3)",
+          "oklch(84% 0.0549 209.3)",
+          "oklch(95% 0.0549 209.3)"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Поверхность чтения (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0000 0.0)",
+          "oklch(26% 0.0000 0.0)",
+          "oklch(38% 0.0000 0.0)",
+          "oklch(49% 0.0000 0.0)",
+          "oklch(61% 0.0000 0.0)",
+          "oklch(72% 0.0000 0.0)",
+          "oklch(84% 0.0000 0.0)",
+          "oklch(95% 0.0000 0.0)"
+        ]
+      },
+      "background-dark": {
+        "role": "neutral",
+        "displayName": "Поверхность чтения (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0076 248.2)",
+          "oklch(26% 0.0076 248.2)",
+          "oklch(38% 0.0076 248.2)",
+          "oklch(49% 0.0076 248.2)",
+          "oklch(61% 0.0076 248.2)",
+          "oklch(72% 0.0076 248.2)",
+          "oklch(84% 0.0076 248.2)",
+          "oklch(95% 0.0076 248.2)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Фон истории (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0029 264.5)",
+          "oklch(26% 0.0029 264.5)",
+          "oklch(38% 0.0029 264.5)",
+          "oklch(49% 0.0029 264.5)",
+          "oklch(61% 0.0029 264.5)",
+          "oklch(72% 0.0029 264.5)",
+          "oklch(84% 0.0029 264.5)",
+          "oklch(95% 0.0029 264.5)"
+        ]
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Фон истории (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0069 258.4)",
+          "oklch(26% 0.0069 258.4)",
+          "oklch(38% 0.0069 258.4)",
+          "oklch(49% 0.0069 258.4)",
+          "oklch(61% 0.0069 258.4)",
+          "oklch(72% 0.0069 258.4)",
+          "oklch(84% 0.0069 258.4)",
+          "oklch(95% 0.0069 258.4)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Основной текст (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0126 222.5)",
+          "oklch(26% 0.0126 222.5)",
+          "oklch(38% 0.0126 222.5)",
+          "oklch(49% 0.0126 222.5)",
+          "oklch(61% 0.0126 222.5)",
+          "oklch(72% 0.0126 222.5)",
+          "oklch(84% 0.0126 222.5)",
+          "oklch(95% 0.0126 222.5)"
+        ]
+      },
+      "foreground-dark": {
+        "role": "neutral",
+        "displayName": "Основной текст (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0051 228.8)",
+          "oklch(26% 0.0051 228.8)",
+          "oklch(38% 0.0051 228.8)",
+          "oklch(49% 0.0051 228.8)",
+          "oklch(61% 0.0051 228.8)",
+          "oklch(72% 0.0051 228.8)",
+          "oklch(84% 0.0051 228.8)",
+          "oklch(95% 0.0051 228.8)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Заливка при наведении (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0045 214.3)",
+          "oklch(26% 0.0045 214.3)",
+          "oklch(38% 0.0045 214.3)",
+          "oklch(49% 0.0045 214.3)",
+          "oklch(61% 0.0045 214.3)",
+          "oklch(72% 0.0045 214.3)",
+          "oklch(84% 0.0045 214.3)",
+          "oklch(95% 0.0045 214.3)"
+        ]
+      },
+      "muted-dark": {
+        "role": "neutral",
+        "displayName": "Заливка при наведении (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0113 237.0)",
+          "oklch(26% 0.0113 237.0)",
+          "oklch(38% 0.0113 237.0)",
+          "oklch(49% 0.0113 237.0)",
+          "oklch(61% 0.0113 237.0)",
+          "oklch(72% 0.0113 237.0)",
+          "oklch(84% 0.0113 237.0)",
+          "oklch(95% 0.0113 237.0)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Перевод и метаданные (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0225 226.1)",
+          "oklch(26% 0.0225 226.1)",
+          "oklch(38% 0.0225 226.1)",
+          "oklch(49% 0.0225 226.1)",
+          "oklch(61% 0.0225 226.1)",
+          "oklch(72% 0.0225 226.1)",
+          "oklch(84% 0.0225 226.1)",
+          "oklch(95% 0.0225 226.1)"
+        ]
+      },
+      "muted-foreground-dark": {
+        "role": "neutral",
+        "displayName": "Перевод и метаданные (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0162 222.7)",
+          "oklch(26% 0.0162 222.7)",
+          "oklch(38% 0.0162 222.7)",
+          "oklch(49% 0.0162 222.7)",
+          "oklch(61% 0.0162 222.7)",
+          "oklch(72% 0.0162 222.7)",
+          "oklch(84% 0.0162 222.7)",
+          "oklch(95% 0.0162 222.7)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Разделители (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0090 214.3)",
+          "oklch(26% 0.0090 214.3)",
+          "oklch(38% 0.0090 214.3)",
+          "oklch(49% 0.0090 214.3)",
+          "oklch(61% 0.0090 214.3)",
+          "oklch(72% 0.0090 214.3)",
+          "oklch(84% 0.0090 214.3)",
+          "oklch(95% 0.0090 214.3)"
+        ]
+      },
+      "border-dark": {
+        "role": "neutral",
+        "displayName": "Разделители (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0140 235.3)",
+          "oklch(26% 0.0140 235.3)",
+          "oklch(38% 0.0140 235.3)",
+          "oklch(49% 0.0140 235.3)",
+          "oklch(61% 0.0140 235.3)",
+          "oklch(72% 0.0140 235.3)",
+          "oklch(84% 0.0140 235.3)",
+          "oklch(95% 0.0140 235.3)"
+        ]
+      },
+      "input": {
+        "role": "neutral",
+        "displayName": "Контуры и выключенная дорожка (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0165 216.7)",
+          "oklch(26% 0.0165 216.7)",
+          "oklch(38% 0.0165 216.7)",
+          "oklch(49% 0.0165 216.7)",
+          "oklch(61% 0.0165 216.7)",
+          "oklch(72% 0.0165 216.7)",
+          "oklch(84% 0.0165 216.7)",
+          "oklch(95% 0.0165 216.7)"
+        ]
+      },
+      "input-dark": {
+        "role": "neutral",
+        "displayName": "Контуры и выключенная дорожка (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.0221 217.5)",
+          "oklch(26% 0.0221 217.5)",
+          "oklch(38% 0.0221 217.5)",
+          "oklch(49% 0.0221 217.5)",
+          "oklch(61% 0.0221 217.5)",
+          "oklch(72% 0.0221 217.5)",
+          "oklch(84% 0.0221 217.5)",
+          "oklch(95% 0.0221 217.5)"
+        ]
+      },
+      "live": {
+        "displayName": "Запись и подключение (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.1192 153.0)",
+          "oklch(26% 0.1192 153.0)",
+          "oklch(38% 0.1192 153.0)",
+          "oklch(49% 0.1192 153.0)",
+          "oklch(61% 0.1192 153.0)",
+          "oklch(72% 0.1192 153.0)",
+          "oklch(84% 0.1192 153.0)",
+          "oklch(95% 0.1192 153.0)"
+        ]
+      },
+      "live-dark": {
+        "displayName": "Запись и подключение (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.1437 157.0)",
+          "oklch(26% 0.1437 157.0)",
+          "oklch(38% 0.1437 157.0)",
+          "oklch(49% 0.1437 157.0)",
+          "oklch(61% 0.1437 157.0)",
+          "oklch(72% 0.1437 157.0)",
+          "oklch(84% 0.1437 157.0)",
+          "oklch(95% 0.1437 157.0)"
+        ]
+      },
+      "warning": {
+        "displayName": "Пауза и переподключение (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.1022 76.1)",
+          "oklch(26% 0.1022 76.1)",
+          "oklch(38% 0.1022 76.1)",
+          "oklch(49% 0.1022 76.1)",
+          "oklch(61% 0.1022 76.1)",
+          "oklch(72% 0.1022 76.1)",
+          "oklch(84% 0.1022 76.1)",
+          "oklch(95% 0.1022 76.1)"
+        ]
+      },
+      "warning-dark": {
+        "displayName": "Пауза и переподключение (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.1237 78.9)",
+          "oklch(26% 0.1237 78.9)",
+          "oklch(38% 0.1237 78.9)",
+          "oklch(49% 0.1237 78.9)",
+          "oklch(61% 0.1237 78.9)",
+          "oklch(72% 0.1237 78.9)",
+          "oklch(84% 0.1237 78.9)",
+          "oklch(95% 0.1237 78.9)"
+        ]
+      },
+      "destructive": {
+        "displayName": "Ошибка (светлая тема)",
+        "tonalRamp": [
+          "oklch(15% 0.1443 33.8)",
+          "oklch(26% 0.1443 33.8)",
+          "oklch(38% 0.1443 33.8)",
+          "oklch(49% 0.1443 33.8)",
+          "oklch(61% 0.1443 33.8)",
+          "oklch(72% 0.1443 33.8)",
+          "oklch(84% 0.1443 33.8)",
+          "oklch(95% 0.1443 33.8)"
+        ]
+      },
+      "destructive-dark": {
+        "displayName": "Ошибка (тёмная тема)",
+        "tonalRamp": [
+          "oklch(15% 0.1205 33.0)",
+          "oklch(26% 0.1205 33.0)",
+          "oklch(38% 0.1205 33.0)",
+          "oklch(49% 0.1205 33.0)",
+          "oklch(61% 0.1205 33.0)",
+          "oklch(72% 0.1205 33.0)",
+          "oklch(84% 0.1205 33.0)",
+          "oklch(95% 0.1205 33.0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Заголовок занятия",
+        "purpose": "Название или дата занятия."
+      },
+      "body": {
+        "displayName": "Оригинал",
+        "purpose": "Основной текст для чтения и выделения."
+      },
+      "translation": {
+        "displayName": "Перевод",
+        "purpose": "Доступный перевод под оригиналом."
+      },
+      "control": {
+        "displayName": "Кнопки",
+        "purpose": "Команды панели инструментов."
+      },
+      "session-date": {
+        "displayName": "Дата в истории",
+        "purpose": "Заголовок ссылки на занятие."
+      },
+      "timestamp": {
+        "displayName": "Время в записи",
+        "purpose": "Метка времени с цифрами одинаковой ширины."
+      }
+    },
+    "motion": [
+      {
+        "name": "control-transition",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Переходы кнопок, поля ввода и переключателя."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "Длительность переходов при prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "history-disclosure",
+        "value": "780px"
+      },
+      {
+        "name": "stacked-transcript-row",
+        "value": "480px"
+      },
+      {
+        "name": "input-type",
+        "value": "48rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Возврат к последней фразе",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Возобновляет автопрокрутку стенограммы.",
+      "html": "<button type=\"button\" class=\"ds-button-primary\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 17V3\"/><path d=\"m6 11 6 6 6-6\"/><path d=\"M19 21H5\"/></svg> К последней фразе</button>",
+      "css": ".ds-button-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; box-sizing: border-box; height: 2.25rem; padding: 0 0.625rem; border: 1px solid transparent; border-radius: var(--radius, 0.5rem); background-clip: padding-box; font: 500 0.875rem/1.25rem \"Inter Variable\", system-ui, sans-serif; white-space: nowrap; cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); background: var(--primary, light-dark(#126e79, #38c2cf)); color: var(--primary-foreground, light-dark(#fff, #092125)); }\n.ds-button-primary:hover { background: color-mix(in oklab, var(--primary, light-dark(#126e79, #38c2cf)) 80%, transparent); }\n.ds-button-primary:focus-visible { outline: 2px solid var(--ring, light-dark(#167d8b, #38c2cf)); outline-offset: 3px; border-color: var(--ring, light-dark(#167d8b, #38c2cf)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, light-dark(#167d8b, #38c2cf)) 50%, transparent); }\n.ds-button-primary:active { translate: 0 1px; }\n.ds-button-primary:disabled { opacity: 0.5; pointer-events: none; }\n@media (prefers-reduced-motion: reduce) { .ds-button-primary { transition-duration: 0.01ms; } }"
+    },
+    {
+      "name": "Копирование стенограммы",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Общее действие в панели инструментов.",
+      "html": "<button type=\"button\" class=\"ds-button-outline\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\"/><path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\"/></svg> Копировать всё</button>",
+      "css": ".ds-button-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; box-sizing: border-box; min-height: 36px; padding: 0 0.625rem; border: 1px solid transparent; border-radius: var(--radius, 0.5rem); background-clip: padding-box; font: 500 0.875rem/1.25rem \"Inter Variable\", system-ui, sans-serif; white-space: nowrap; cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); background: light-dark(var(--background, light-dark(#fff, #15181b)), color-mix(in oklab, var(--input, light-dark(#b0bec2, #55666b)) 30%, transparent)); color: var(--foreground, light-dark(#20282b, #e9edef)); border-color: light-dark(var(--border, light-dark(#dce4e6, #30383d)), var(--input, light-dark(#b0bec2, #55666b))); }\n.ds-button-outline:hover { background: light-dark(var(--muted, light-dark(#edf1f2, #242a2e)), color-mix(in oklab, var(--input, light-dark(#b0bec2, #55666b)) 50%, transparent)); color: var(--foreground, light-dark(#20282b, #e9edef)); }\n.ds-button-outline:focus-visible { outline: 2px solid var(--ring, light-dark(#167d8b, #38c2cf)); outline-offset: 3px; border-color: var(--ring, light-dark(#167d8b, #38c2cf)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, light-dark(#167d8b, #38c2cf)) 50%, transparent); }\n.ds-button-outline:active { translate: 0 1px; }\n.ds-button-outline:disabled { opacity: 0.5; pointer-events: none; }\n@media (prefers-reduced-motion: reduce) { .ds-button-outline { transition-duration: 0.01ms; } }"
+    },
+    {
+      "name": "Переход к живой записи",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Быстрый переход из истории к активному занятию.",
+      "html": "<button type=\"button\" class=\"ds-button-secondary\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 10v3\"/><path d=\"M6 6v11\"/><path d=\"M10 3v18\"/><path d=\"M14 8v7\"/><path d=\"M18 5v13\"/><path d=\"M22 10v3\"/></svg> К живой записи</button>",
+      "css": ".ds-button-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; box-sizing: border-box; height: 2rem; width: 100%; justify-content: flex-start; padding: 0 0.625rem; border: 1px solid transparent; border-radius: var(--radius, 0.5rem); background-clip: padding-box; font: 500 0.875rem/1.25rem \"Inter Variable\", system-ui, sans-serif; white-space: nowrap; cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); background: var(--secondary, light-dark(#e0f1f2, #183a3f)); color: var(--secondary-foreground, light-dark(#155963, #91e3e9)); }\n.ds-button-secondary:hover { background: color-mix(in oklch, var(--secondary, light-dark(#e0f1f2, #183a3f)), var(--foreground, light-dark(#20282b, #e9edef)) 5%); }\n.ds-button-secondary:focus-visible { outline: 2px solid var(--ring, light-dark(#167d8b, #38c2cf)); outline-offset: 3px; border-color: var(--ring, light-dark(#167d8b, #38c2cf)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, light-dark(#167d8b, #38c2cf)) 50%, transparent); }\n.ds-button-secondary:active { translate: 0 1px; }\n.ds-button-secondary:disabled { opacity: 0.5; pointer-events: none; }\n@media (prefers-reduced-motion: reduce) { .ds-button-secondary { transition-duration: 0.01ms; } }"
+    },
+    {
+      "name": "Копирование фразы",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Компактная кнопка рядом с отдельной репликой.",
+      "html": "<button type=\"button\" class=\"ds-button-ghost\" aria-label=\"Копировать фразу\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\"/><path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\"/></svg></button>",
+      "css": ".ds-button-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; box-sizing: border-box; width: 1.75rem; height: 1.75rem; padding: 0; border: 1px solid transparent; border-radius: var(--radius, 0.5rem); background-clip: padding-box; font: 500 0.875rem/1.25rem \"Inter Variable\", system-ui, sans-serif; white-space: nowrap; cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); background: transparent; color: var(--muted-foreground, light-dark(#53636a, #a8b5ba)); }\n.ds-button-ghost:hover { background: light-dark(var(--muted, light-dark(#edf1f2, #242a2e)), color-mix(in oklab, var(--muted, light-dark(#edf1f2, #242a2e)) 50%, transparent)); color: var(--foreground, light-dark(#20282b, #e9edef)); }\n.ds-button-ghost:focus-visible { outline: 2px solid var(--ring, light-dark(#167d8b, #38c2cf)); outline-offset: 3px; border-color: var(--ring, light-dark(#167d8b, #38c2cf)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, light-dark(#167d8b, #38c2cf)) 50%, transparent); }\n.ds-button-ghost:active { translate: 0 1px; }\n.ds-button-ghost:disabled { opacity: 0.5; pointer-events: none; }\n@media (prefers-reduced-motion: reduce) { .ds-button-ghost { transition-duration: 0.01ms; } }"
+    },
+    {
+      "name": "Поиск в стенограмме",
+      "kind": "input",
+      "refersTo": "search",
+      "description": "Гибкое поле в панели чтения.",
+      "html": "<label class=\"ds-search\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><input type=\"text\" class=\"ds-search-field\" aria-label=\"Найти в стенограмме\" placeholder=\"Найти в стенограмме\"></label>",
+      "css": ".ds-search { display: flex; gap: 8px; align-items: center; min-width: min(210px, 100%); box-sizing: border-box; min-height: 36px; padding: 0 9px; border: 1px solid var(--border, light-dark(#dce4e6, #30383d)); border-radius: var(--radius, 0.5rem); background: var(--background, light-dark(#fff, #15181b)); color: var(--muted-foreground, light-dark(#53636a, #a8b5ba)); }\n.ds-search svg { flex: none; }\n.ds-search-field { width: 100%; min-width: 0; height: 2rem; padding: 0.25rem 0; box-sizing: border-box; border: 0; background: transparent; outline: none; color: var(--foreground, light-dark(#20282b, #e9edef)); font: 400 1rem/1.5 \"Inter Variable\", system-ui, sans-serif; }\n.ds-search-field::placeholder { color: var(--muted-foreground, light-dark(#53636a, #a8b5ba)); }\n.ds-search:focus-within { outline: 2px solid var(--ring, light-dark(#167d8b, #38c2cf)); outline-offset: 1px; }\n@media (min-width: 48rem) { .ds-search-field { font-size: 0.875rem; line-height: 1.25rem; } }"
+    },
+    {
+      "name": "Переключатели чтения",
+      "kind": "custom",
+      "refersTo": "switch-checked",
+      "description": "Бирюзовая дорожка показывает активный режим.",
+      "html": "<div class=\"ds-switches\"><label class=\"ds-switch-label\"><button type=\"button\" role=\"switch\" aria-checked=\"true\" class=\"ds-switch\"><span class=\"ds-switch-thumb\"></span></button> Перевод</label><label class=\"ds-switch-label\"><button type=\"button\" role=\"switch\" aria-checked=\"false\" class=\"ds-switch\"><span class=\"ds-switch-thumb\"></span></button> Автопрокрутка</label></div>",
+      "css": ".ds-switches { display: flex; flex-wrap: wrap; gap: 10px 17px; }\n.ds-switch-label { display: inline-flex; gap: 9px; align-items: center; min-height: 36px; cursor: pointer; font: 400 0.82rem/1.5 \"Inter Variable\", system-ui, sans-serif; color: var(--foreground, light-dark(#20282b, #e9edef)); }\n.ds-switch { display: inline-flex; position: relative; flex: none; align-items: center; box-sizing: border-box; padding: 0; width: 32px; height: 18.4px; border: 1px solid transparent; border-radius: 9999px; background: light-dark(var(--input, light-dark(#b0bec2, #55666b)), color-mix(in oklab, var(--input, light-dark(#b0bec2, #55666b)) 80%, transparent)); cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); }\n.ds-switch::after { content: ''; position: absolute; inset: -0.5rem -0.75rem; }\n.ds-switch-thumb { display: block; width: 1rem; height: 1rem; border-radius: 9999px; background: light-dark(var(--background, light-dark(#fff, #15181b)), var(--foreground, light-dark(#20282b, #e9edef))); pointer-events: none; transition: translate 150ms cubic-bezier(0.4, 0, 0.2, 1); }\n.ds-switch[aria-checked='true'] { background: var(--primary, light-dark(#126e79, #38c2cf)); }\n.ds-switch[aria-checked='true'] .ds-switch-thumb { translate: calc(100% - 2px) 0; background: light-dark(var(--background, light-dark(#fff, #15181b)), var(--primary-foreground, light-dark(#fff, #092125))); }\n.ds-switch:focus-visible { outline: 2px solid var(--ring, light-dark(#167d8b, #38c2cf)); outline-offset: 3px; border-color: var(--ring, light-dark(#167d8b, #38c2cf)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, light-dark(#167d8b, #38c2cf)) 50%, transparent); }\n.ds-switch:disabled { cursor: not-allowed; opacity: 0.5; }\n@media (prefers-reduced-motion: reduce) { .ds-switch, .ds-switch-thumb { transition-duration: 0.01ms; } }"
+    },
+    {
+      "name": "История занятий",
+      "kind": "nav",
+      "refersTo": "session-link-current",
+      "description": "Дата ведёт к стенограмме, мягкая заливка отмечает выбранное занятие.",
+      "html": "<nav class=\"ds-history\" aria-label=\"Сохранённые занятия\"><a class=\"ds-session\" aria-current=\"page\" href=\"#example-1\"><span class=\"ds-session-date\">16 ноября 2026 г.</span><span class=\"ds-session-detail\"><time>14:20</time>Английский → русский</span></a><a class=\"ds-session\" href=\"#example-2\"><span class=\"ds-session-date\">15 ноября 2026 г.</span><span class=\"ds-session-detail\"><time>10:00</time>Английский → русский</span></a></nav>",
+      "css": ".ds-history { display: grid; gap: 4px; padding: 12px; background: var(--canvas, light-dark(#f4f5f7, #111316)); }\n.ds-session { display: grid; gap: 4px; min-width: 0; padding: 10px 12px; border-radius: var(--radius, 0.5rem); font: 400 1rem/1.4 \"Inter Variable\", system-ui, sans-serif; color: var(--foreground, light-dark(#20282b, #e9edef)); text-decoration: none; }\n.ds-session:not([aria-current]):hover { background: var(--muted, light-dark(#edf1f2, #242a2e)); }\n.ds-session[aria-current='page'] { background: var(--secondary, light-dark(#e0f1f2, #183a3f)); color: var(--secondary-foreground, light-dark(#155963, #91e3e9)); }\n.ds-session-date { font-size: 0.875rem; font-weight: 600; }\n.ds-session-detail { display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.75rem; color: var(--muted-foreground, light-dark(#53636a, #a8b5ba)); }\n.ds-session-detail time { font-variant-numeric: tabular-nums; }\n.ds-session:focus-visible { outline: 2px solid var(--ring, light-dark(#167d8b, #38c2cf)); outline-offset: 3px; }"
+    },
+    {
+      "name": "Строка стенограммы",
+      "kind": "custom",
+      "refersTo": "transcript-row",
+      "description": "Выделяемый оригинал, перевод и время начала фразы.",
+      "html": "<article class=\"ds-segment\"><time class=\"ds-timestamp\">02:17</time><div class=\"ds-segment-text\"><p class=\"ds-source\" lang=\"en\">Let’s look at what happens when the temperature drops.</p><p class=\"ds-translation\" lang=\"ru\">Посмотрим, что происходит при снижении температуры.</p></div><button type=\"button\" class=\"ds-copy-line\" aria-label=\"Копировать фразу 02:17\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\"/><path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\"/></svg></button></article>",
+      "css": ".ds-segment { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding-block: 19px; border-bottom: 1px solid var(--border, light-dark(#dce4e6, #30383d)); color: var(--foreground, light-dark(#20282b, #e9edef)); }\n.ds-timestamp { padding-top: 7px; color: var(--muted-foreground, light-dark(#53636a, #a8b5ba)); font: 400 0.8rem/1.5 \"Inter Variable\", system-ui, sans-serif; font-variant-numeric: tabular-nums; }\n.ds-segment-text { min-width: 0; }\n.ds-source, .ds-translation { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }\n.ds-source { font: 400 clamp(1.2rem, 2vw, 1.4rem)/1.48 \"PT Serif\", Georgia, serif; }\n.ds-translation { margin-top: 6px; color: var(--muted-foreground, light-dark(#53636a, #a8b5ba)); font: 400 0.925rem/1.62 \"Inter Variable\", system-ui, sans-serif; }\n.ds-copy-line { display: inline-grid; place-items: center; box-sizing: border-box; width: 1.75rem; height: 1.75rem; padding: 0; border: 1px solid transparent; border-radius: var(--radius, 0.5rem); background: transparent; color: var(--muted-foreground, light-dark(#53636a, #a8b5ba)); cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); }\n.ds-copy-line:hover { background: light-dark(var(--muted, light-dark(#edf1f2, #242a2e)), color-mix(in oklab, var(--muted, light-dark(#edf1f2, #242a2e)) 50%, transparent)); color: var(--foreground, light-dark(#20282b, #e9edef)); }\n.ds-copy-line:focus-visible { outline: 2px solid var(--ring, light-dark(#167d8b, #38c2cf)); outline-offset: 3px; border-color: var(--ring, light-dark(#167d8b, #38c2cf)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, light-dark(#167d8b, #38c2cf)) 50%, transparent); }\n.ds-copy-line:active { translate: 0 1px; }\n@media (max-width: 480px) { .ds-segment { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding-block: 13px; } .ds-timestamp { grid-column: 1; padding: 0; } .ds-segment-text { grid-row: 2; grid-column: 1 / -1; } .ds-copy-line { grid-row: 1; grid-column: 2; margin-block: -4px; } }\n@media (prefers-reduced-motion: reduce) { .ds-copy-line { transition-duration: 0.01ms; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Конспект занятия",
+    "overview": "Длинную стенограмму читают как заметки. Крупный оригинал задаёт ход чтения, перевод остаётся под ним, а время вынесено в отдельную колонку. Архив и управление помещаются рядом с текстом.\n\nПравила относятся к веб-интерфейсу Study Edition. Нейтральные поверхности, бирюза и отдельные цвета состояний продолжают нативный AirTranslate. Типографику и геометрию веб-версии задаёт её собственный CSS.",
+    "keyCharacteristics": [
+      "Оригинал набран PT Serif, интерфейс и перевод набраны Inter.",
+      "Строки стенограммы разделены тонкими линиями.",
+      "Светлая и тёмная темы сохраняют одинаковую иерархию."
+    ],
+    "rules": [
+      {
+        "name": "The State Color Rule",
+        "body": "Зелёный обозначает активную запись или установленное подключение. Янтарный показывает паузу, прерывание записи и подключение в процессе. Подпись или значок также передаёт состояние. Сообщение об ошибке использует красный.",
+        "section": "colors"
+      },
+      {
+        "name": "The Transcript Hierarchy Rule",
+        "body": "Сохраняйте оригинал первым и размещайте доступный перевод сразу под ним. Состояние распознавания имеет собственный блок, где исходный текст приглушён.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do keep color roles consistent in light and dark themes.",
+      "Do keep transcript text selectable and give controls visible focus and accessible names.",
+      "Do keep translation and metadata visually subordinate to the original transcript."
+    ],
+    "donts": []
+  }
+}
