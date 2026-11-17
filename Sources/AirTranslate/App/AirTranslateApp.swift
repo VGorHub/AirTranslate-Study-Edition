@@ -5,14 +5,10 @@ import SwiftUI
 @main
 struct AirTranslateApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @State private var session = TranslationSessionStore()
     @State private var menuBarPanelController = MenuBarPanelController()
 
-    init() {
-        appDelegate.session = session
-    }
-
     var body: some Scene {
+        let session = appDelegate.session
         WindowGroup("AirTranslate", id: AirTranslateWindowID.main) {
             ContentView(session: session)
                 .frame(
@@ -68,8 +64,10 @@ private struct CaptureCommands: Commands {
     }
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    var session: TranslationSessionStore?
+    // SwiftUI and the loopback server use the same store for the lifetime of the app.
+    private(set) lazy var session = TranslationSessionStore()
     private var studyBackend: StudyBackend?
     private var studyServer: Task<Void, Never>?
     private var studyHeartbeat: Task<Void, Never>?
@@ -84,8 +82,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        session?.prepareForTermination()
-        guard let capture = session?.studyCapture else { return .terminateNow }
+        session.prepareForTermination()
+        guard let capture = session.studyCapture else { return .terminateNow }
         studyHeartbeat?.cancel()
         studyServer?.cancel()
         Task { @MainActor in
@@ -96,9 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return .terminateLater
     }
 
-    @MainActor
     private func startStudyServices() {
-        guard let session else { return }
         let environment = ProcessInfo.processInfo.environment
         let support: URL
         if let directory = environment["AIRTRANSLATE_STUDY_DATA_DIRECTORY"], directory.hasPrefix("/") {
@@ -111,7 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         session.studyCapture = StudyCapture(backend: backend)
 
         let port = StudyHTTPServer.configuredPort
-        let server = StudyHTTPServer(port: port, backend: backend) { [weak session] action in
+        let server = StudyHTTPServer(port: port, backend: backend) { [weak session = session] action in
             session?.handleStudyCaptureAction(action) ?? false
         }
         studyServer = Task {
