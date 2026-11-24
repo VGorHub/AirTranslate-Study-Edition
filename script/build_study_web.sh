@@ -9,8 +9,12 @@ if ! command -v npm >/dev/null || ! node -e 'process.exit(Number(process.version
   exit 1
 fi
 
-npm --prefix "$WEB_DIR" ci --no-audit --no-fund
-npm --prefix "$WEB_DIR" run build
+# Let npm find its project from the working directory when the checkout path uses a symlink.
+(
+  cd "$WEB_DIR"
+  npm ci --no-audit --no-fund
+  npm run build
+)
 mkdir -p "$DESTINATION/licenses"
 cp -R "$WEB_DIR/dist/." "$DESTINATION"
 install -m 644 "$WEB_DIR/licenses/shadcn-ui.txt" "$DESTINATION/licenses/shadcn-ui.txt"

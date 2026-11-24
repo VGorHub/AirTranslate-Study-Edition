@@ -6,6 +6,8 @@ AirTranslate is a macOS SwiftPM app. Use the repository scripts first so local a
 
 Source builds require Xcode 27 with the macOS 27 SDK and Swift 6.4 or later for the speech input converter. The deployment target remains macOS 26, with newer system APIs guarded by runtime availability. Select the intended Xcode installation before running the commands below.
 
+Both app packaging scripts require Node.js 24 or later with npm to build the bundled Study Edition web interface. See the [Study Edition setup guide](STUDY-EDITION.md#установка-study-edition) for a first build.
+
 ## Common Commands
 
 Run the app bundle:

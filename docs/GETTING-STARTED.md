@@ -2,7 +2,9 @@
 
 This guide covers installation, first-launch permissions, provider setup, and the first caption session.
 
-## Install The Public Build
+For Study Edition, build the app using the [Study Edition setup guide](STUDY-EDITION.md#установка-study-edition), then continue with [First Launch](#first-launch).
+
+## Install The Public Upstream Build
 
 1. Download the latest public DMG from [GitHub Releases](https://github.com/himomohi/AirTranslate/releases/latest).
 2. Open the DMG and drag `AirTranslate.app` to Applications.
@@ -74,4 +76,4 @@ Transcript file saving is off by default. Enable **Save Transcript Files** in Se
 ~/Library/Application Support/AirTranslate/Transcripts/*.txt
 ```
 
-When file saving is off, transcript text stays in memory for the current session and Stop or app quit does not create transcript files.
+When file saving is off, Stop and app quit do not create TXT files. Study Edition saves its browser session history separately to local SQLite. [Study Edition storage](STUDY-API.md)

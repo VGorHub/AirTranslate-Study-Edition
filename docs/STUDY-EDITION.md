@@ -1,10 +1,51 @@
 # AirTranslate Study Edition
 
+## Установка Study Edition
+
+- Для сборки нужен Mac с полным Xcode 27 или новее, SDK macOS 27 или новее и Swift 6.4 или новее. Xcode 27.2 запускается на macOS Tahoe 26.6 или новее. Собранному AirTranslate нужна macOS 26 или новее. [Требования Apple к Xcode](https://developer.apple.com/xcode/system-requirements/)
+- Установите Node.js 24 или новее с npm. Они нужны при сборке. Веб-интерфейс упаковывается в `.app` и работает через встроенный сервер AirTranslate. [Загрузка Node.js](https://nodejs.org/en/download)
+- Убедитесь, что у вашего аккаунта GitHub есть доступ к приватному репозиторию и настроен вход по SSH. Интернет нужен для клонирования и загрузки зависимостей SwiftPM и npm. [Настройка SSH для GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
+
+Запустите Xcode один раз, чтобы завершить его настройку. Закройте AirTranslate через `⌘Q`, если он уже открыт, и откройте Терминал. Если Xcode установлен под другим именем или в другой папке, подставьте фактический путь в `DEVELOPER_DIR`.
+
+```bash
+git clone --branch study git@github.com:VGorHub/AirTranslate-Study-Edition.git
+cd AirTranslate-Study-Edition
+
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+xcodebuild -version
+xcrun --sdk macosx --show-sdk-version
+swift --version
+node --version
+npm --version
+
+BUILD_CONFIGURATION=release ./script/build_and_run.sh --verify
+```
+
+Скрипт соберёт, подпишет и откроет `dist/AirTranslate.app` и проверит, что запустилась именно эта сборка. Позже приложение можно открыть из этой папки в Finder. При первой записи предоставьте запрошенные разрешения macOS. Для локального распознавания и перевода выберите **Apple Mode**, настройте языки и при запросе загрузите пакеты в **Settings → Assets**. [Разрешения и первый запуск](GETTING-STARTED.md#first-launch)
+
+Нажмите кнопку с глобусом, чтобы открыть стенограмму. По умолчанию её адрес `http://127.0.0.1:8765/`. Если `8765` занят AnkiConnect, закройте AirTranslate, выполните команду ниже и снова откройте приложение. Кнопка с глобусом откроет страницу на `18765`. [Настройка порта и локальный API](STUDY-API.md)
+
+```bash
+defaults write dev.appcaster.AirTranslate StudyPort -int 18765
+```
+
+### Обновление существующей копии
+
+Закройте AirTranslate через `⌘Q` и выполните команды из папки репозитория. Стенограммы хранятся в Application Support, поэтому пересборка `dist/AirTranslate.app` сохраняет историю.
+
+```bash
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+git switch study
+git pull --ff-only origin study
+BUILD_CONFIGURATION=release ./script/build_and_run.sh --verify
+```
+
 ## Этап 1. Исходная версия
 
-Study Edition добавляет к нативному AirTranslate историю занятий и локальный API. Браузерная транскрипция для Yomitan и Markdown для Obsidian запланированы на этапы 3 и 4. Зафиксированный upstream — [`c177992`](https://github.com/himomohi/AirTranslate/commit/c1779923cba6261db56be95d2d25a733a55e766c), тег `v1.17.0` (сборка 1170).
+Исходный код, на котором началась работа над Study Edition, зафиксирован в upstream-коммите [`c177992`](https://github.com/himomohi/AirTranslate/commit/c1779923cba6261db56be95d2d25a733a55e766c), тег `v1.17.0` (сборка 1170).
 
-Проверка от 16 ноября 2026 года на MacBook Pro M3 Pro, 18 ГБ, macOS 27.2 (`26B123`). Активны Command Line Tools со Swift 6.4.2 и SDK macOS 27.2. Полный Xcode не обнаружен, `xcodebuild -version` требует его установки.
+Проверка от 16 ноября 2026 года на MacBook Pro M3 Pro, 18 ГБ, macOS 27.2 (`26B123`). На момент исходной проверки использовались Command Line Tools со Swift 6.4.2 и SDK macOS 27.2, без полного Xcode. Проверки с Xcode 27.2 описаны ниже.
 
 | Проверка на исходном коде | Результат |
 | --- | --- |
@@ -31,7 +72,7 @@ Study Edition добавляет к нативному AirTranslate истори
 
 ## Этап 3. Стенограмма в браузере
 
-Для сборки `.app` установите Node.js 24 или новее с npm и выполните `./script/build_and_run.sh --verify`. Оба сценария упаковки собирают `Web/` через `npm ci` и Vite, затем копируют страницу, шрифты и остальные ресурсы в `.app` до подписи. Встроенный Swift-сервер обслуживает страницу и API. После упаковки достаточно запустить AirTranslate.
+Оба сценария упаковки собирают `Web/` через `npm ci` и Vite, затем копируют страницу, шрифты и остальные ресурсы в `.app` до подписи. Встроенный Swift-сервер обслуживает страницу и API.
 
 1. Нажмите кнопку с глобусом в AirTranslate или введите `http://127.0.0.1:8765/` в Chrome. При особой настройке используйте свой порт, например `18765`.
 2. Выберите **Apple Mode**, **Mac Audio**, **English → Russian**. Начните захват и воспроизведите английское аудио. После временного распознавания фраза появится среди подтверждённых, следом может прийти перевод.
@@ -41,38 +82,37 @@ Study Edition добавляет к нативному AirTranslate истори
 Разработчик может подключить Vite к отдельно запущенному AirTranslate для правок веб-кода. В обычной сборке этот процесс не нужен.
 
 ```bash
-npm --prefix Web ci
-npm --prefix Web test
-AIRTRANSLATE_STUDY_PORT=18765 npm --prefix Web run dev
+cd Web
+npm ci
+npm test
+AIRTRANSLATE_STUDY_PORT=18765 npm run dev
 ```
 
 `Web/src/study/` восстанавливает постраничный снимок занятия и применяет SSE поверх его курсора. Подтверждённые фразы имеют стабильные DOM-узлы. Временные фразы отображаются в отдельном блоке. Для длинного текста CSS откладывает отрисовку невидимых строк, сохраняя HTML доступным для выделения и словаря. Веб-интерфейс использует только чтение REST и SSE. Страница и ресурсы отдаются с выделенных маршрутов Hummingbird, через те же проверки Host и Origin, что и API.
 
 В Chrome проверены история, темы, поиск, копирование, перевод и перезагрузка. Синтетическая трёхчасовая сессия с 2 400 фразами открылась примерно за 0,21 секунды в одном локальном замере от выбора занятия до появления последней строки в DOM. В отдельном тесте Chrome получил исправление partial, подтверждение и поздний перевод по SSE. Исходный DOM-узел сохранился, ручная прокрутка остановила следование, а перезагрузка восстановила историю из снимка. В Release-сборке проверен запуск захвата кнопкой **Start** в AirTranslate. Chrome показал английскую фразу и русский перевод при захвате системного звука, а перезагрузка страницы восстановила ту же активную сессию. Для окна словаря Yomitan нужна ручная проверка.
 
-## Как воспроизвести базовую проверку
+## Проверки для разработчика
 
-Для запуска приложения нужна macOS 26 или новее. Для сборки из исходников upstream требует полный Xcode 27 с SDK macOS 27 и Swift 6.4 или новее. Xcode 27 запускается на Apple Silicon с macOS Tahoe 26.6 или новее. Python 3 нужен для тестов инструмента диагностики. SwiftPM при первой сборке загружает Hummingbird и версии из `Package.resolved`. [Требования Apple к Xcode](https://developer.apple.com/xcode/system-requirements/) · [Документация AirTranslate](DEVELOPMENT.md)
+Выполняйте проверки из папки репозитория после выбора Xcode. Python 3 нужен для тестов инструмента диагностики. [Документация AirTranslate](DEVELOPMENT.md)
 
 ```bash
-git clone git@github.com:VGorHub/AirTranslate-Study-Edition.git
-cd AirTranslate-Study-Edition
-git remote add upstream https://github.com/himomohi/AirTranslate.git
-
-# Укажи фактический путь к установленному Xcode в текущем терминале.
-export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-xcodebuild -version
-xcrun --sdk macosx --show-sdk-version
-swift --version
-
 ./script/verify_packaging_permissions.sh
 python3 -m unittest discover -s script/tests -v
 swift test --no-parallel
 swift build -c release
-./script/build_and_run.sh --verify
+(cd Web && npm ci && npm test)
 ```
 
-Последняя команда упаковывает отладочную сборку в `dist/AirTranslate.app`, подписывает её и проверяет путь запущенного процесса. Для ручной проверки выбери Apple Mode, System Audio и английский источник. Нажми Start, воспроизведи короткое английское аудио, проверь распознавание, Pause/Resume, Stop и плавающие субтитры. Если проверяешь TXT, включи штатное сохранение и открой запись в библиотеке. Для захвата через ScreenCaptureKit macOS запрашивает разрешения на запись экрана и системного звука. Разрешение микрофона требуется при выборе соответствующего входа, разрешение распознавания речи — для Apple Speech. [Установка и разрешения macOS](GETTING-STARTED.md)
+Чтобы проверить упаковку без запуска AirTranslate, выполните `./Release/build_open_source_release.sh zip`. Скрипт соберёт и проверит подпись `.app` и создаст ZIP в `Release/product/`.
+
+Для ручной проверки выберите **Apple Mode**, **Mac Audio** и английский источник. Нажмите **Start**, воспроизведите короткое английское аудио, проверьте распознавание, **Pause/Resume**, **Stop** и плавающие субтитры. Если проверяете TXT, включите **Save Transcript Files** и откройте запись в **Saved Transcripts**.
+
+Для разработки с оригинальным AirTranslate добавьте `upstream`, если его ещё нет в выводе `git remote -v`.
+
+```bash
+git remote add upstream https://github.com/himomohi/AirTranslate.git
+```
 
 ## Точки интеграции
 

@@ -10,7 +10,7 @@
 
 Live Mac audio captions and translation for meetings, videos, lectures, interviews, and streams.
 
-**Study Edition** adds Russian translation and a browser transcript with live captions, searchable session history, and selectable text for Yomitan. Click the globe in AirTranslate to open the transcript. [Сборка и проверка Study Edition](docs/STUDY-EDITION.md) · [Локальный API](docs/STUDY-API.md)
+**Study Edition** adds Russian translation and a browser transcript with live captions, searchable session history, and selectable text for Yomitan. Click the globe in AirTranslate to open the transcript. [Установка и обновление Study Edition](docs/STUDY-EDITION.md#установка-study-edition) · [Локальный API](docs/STUDY-API.md)
 
 <p align="center">
   <a href="https://github.com/himomohi/AirTranslate/releases/latest/download/AirTranslate.dmg"><img alt="Download AirTranslate.dmg" src="https://img.shields.io/badge/Download-AirTranslate.dmg-2EA44F?style=for-the-badge&logo=apple&logoColor=white"></a>
@@ -60,7 +60,7 @@ The improvements introduced in **1.16.0** remain available below, including tran
 - **Experimental Jev candidate selection:** off by default. In Apple transcription with translation, Jev can choose among supplied final recognition candidates before translation. Enabling it sends candidate text and up to six recent transcript segments (1,000 UTF-8 bytes) directly to TypeSafe using your Keychain-stored key. It adds API usage and up to 1.2 seconds of response waiting per request. Missing candidates, uncertainty, errors, or timeout keep the original. Accuracy improvement is not guaranteed. [Setup and data handling](docs/apple-translation-options.md).
 - **Apple translation quality and protected terms:** on macOS 26.4+, choose Realtime (default) or Quality first and register terms to retain their spelling. Quality first may take longer and depends on Apple's available models. If it fails, the language pair uses realtime translation until app restart. If a registered term changes, the affected segment stays in its original language. These options apply to Apple text translation.
 - **macOS 27 audio input compatibility:** adapts differing PCM input formats for Apple speech recognition, while retaining the existing 16 kHz mono path.
-- **Source build requirements:** Xcode 27 with the macOS 27 SDK and Swift 6.4 or later. The distributed app still requires macOS 26 or later.
+- **Source build requirements:** Xcode 27 with the macOS 27 SDK and Swift 6.4 or later. Building the Study Edition app bundle also requires Node.js 24 or later with npm. The app requires macOS 26 or later.
 
 Configure an **Alibaba Cloud Singapore API key** in Settings > API Keys > Qwen. Qwen3.8 LiveTranslate also requires a workspace ID; Qwen Audio 3.1 Realtime Plus and Filetrans use the key without one. The key is stored separately in macOS Keychain; selected realtime audio is sent directly to Alibaba Cloud Singapore when capture starts. Choose the existing `qwen3.8-livetranslate-flash-realtime` default or `qwen-audio-3.1-realtime-plus` in Settings > General. Qwen Audio 3.1 Realtime Plus is a full-duplex voice-conversation model that receives translation instructions from AirTranslate; Qwen3.8 LiveTranslate is the dedicated realtime translation model. **Speech output is optional and initially off**. Current Qwen Audio pricing is shown in Model Studio.
 
@@ -74,9 +74,9 @@ The **key-aware mode picker** shows unavailable providers in gray and provides a
 
 **Translated speech output is selectable** in Settings and the main workspace's separate translated-speech control. Choose Apple system speech, Gemini 3.8 Flash or Flash-Lite TTS, or MAI Voice 2.1 or Flash. The choice is saved during realtime modes but used only for text translation; realtime providers keep their native audio. Gemini TTS sends only stable translated text to Google with your Gemini key.
 
-## Download
+## Upstream AirTranslate Downloads
 
-Latest public release: **v1.17.0**.
+Study Edition is based on upstream **v1.17.0**. For the browser transcript and Russian translation in this repository, follow the [Study Edition setup guide](docs/STUDY-EDITION.md#установка-study-edition).
 
 - [Download AirTranslate.dmg](https://github.com/himomohi/AirTranslate/releases/latest/download/AirTranslate.dmg)
 - [Download AirTranslate-1.17.0.zip](https://github.com/himomohi/AirTranslate/releases/download/v1.17.0/AirTranslate-1.17.0.zip)
@@ -175,14 +175,16 @@ The Gemini key is shared by Gemini Live and optional Gemini translated speech ou
 
 - macOS 26.0 or later
 - Optional EmbeddingGemma 2 file transcription: Apple Silicon and macOS 27 or later
-- Swift 6.4 or later for source builds
+- Xcode 27 with the macOS 27 SDK and Swift 6.4 or later for source builds
+- Node.js 24 or later with npm to package the Study Edition app
 - A Mac that supports system-audio capture
 - Apple Speech and Apple Translation framework availability
 - Optional provider keys for OpenAI, Gemini, Meta, Azure Speech, Nari, xAI, or Alibaba Cloud
 
 ## Documentation
 
-- [Getting Started](docs/GETTING-STARTED.md)
+- [Study Edition installation and updates](docs/STUDY-EDITION.md#установка-study-edition)
+- [First-launch permissions and provider setup](docs/GETTING-STARTED.md)
 - [Development](docs/DEVELOPMENT.md)
 - [Nari STT notes](docs/nari-stt.md)
 - [EmbeddingGemma 2 method and file transcription](docs/embeddinggemma-transcription.md)
@@ -191,6 +193,8 @@ The Gemini key is shared by Gemini Live and optional Gemini translated speech ou
 
 <details>
 <summary>Build from source</summary>
+
+Follow the [Study Edition setup guide](docs/STUDY-EDITION.md#установка-study-edition) for cloning the repository and selecting Xcode.
 
 ```bash
 ./script/build_and_run.sh
